@@ -29,9 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.delta.vuelvo.data.Reward
-import com.delta.vuelvo.data.RewardStatus
 import com.delta.vuelvo.data.vector
-import com.delta.vuelvo.ui.VuelvoState
 import com.delta.vuelvo.ui.components.Header
 import com.delta.vuelvo.ui.icons.VuelvoIcons
 import com.delta.vuelvo.ui.theme.VuAccent
@@ -46,13 +44,11 @@ import com.delta.vuelvo.ui.theme.VuLine
 
 @Composable
 fun RewardsScreen(
-    state: VuelvoState,
+    available: List<Reward>,
+    history: List<Reward>,
     onRedeem: (Reward) -> Unit,
     bottomInset: androidx.compose.ui.unit.Dp,
 ) {
-    val available = state.rewards.filter { it.status == RewardStatus.AVAILABLE }
-    val history = state.rewards.filter { it.status == RewardStatus.REDEEMED }
-
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(VuBg),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomInset),

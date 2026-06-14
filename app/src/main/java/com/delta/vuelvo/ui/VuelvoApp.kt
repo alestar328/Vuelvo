@@ -12,9 +12,8 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -22,9 +21,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -37,14 +34,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.delta.vuelvo.data.Reward
-import com.delta.vuelvo.data.StampCard
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.delta.vuelvo.ui.icons.VuelvoIcons
 import com.delta.vuelvo.ui.screens.CardDetail
 import com.delta.vuelvo.ui.screens.CardsScreen
-import com.delta.vuelvo.ui.screens.RedeemSheet
+import com.delta.vuelvo.ui.screens.RedeemFlow
 import com.delta.vuelvo.ui.screens.RewardsScreen
 import com.delta.vuelvo.ui.screens.ScanScreen
+import com.delta.vuelvo.ui.screens.StampAddedModal
 import com.delta.vuelvo.ui.theme.VuAccent
 import com.delta.vuelvo.ui.theme.VuAccentDeep
 import com.delta.vuelvo.ui.theme.VuBg
@@ -53,110 +51,177 @@ import com.delta.vuelvo.ui.theme.VuInk
 import com.delta.vuelvo.ui.theme.VuInk2
 import com.delta.vuelvo.ui.theme.VuInk3
 import com.delta.vuelvo.ui.theme.VuLine
-
-private enum class Tab { CARDS, SCAN, REWARDS }
+import com.delta.vuelvo.ui.viewmodel.AppViewModel
+import com.delta.vuelvo.ui.viewmodel.CardDetailViewModel
+import com.delta.vuelvo.ui.viewmodel.CardsViewModel
+import com.delta.vuelvo.ui.viewmodel.RewardsViewModel
+import com.delta.vuelvo.ui.viewmodel.ScanViewModel
+import com.delta.vuelvo.ui.viewmodel.Tab
 
 @Composable
-fun VuelvoApp() {
-    val state = remember { VuelvoState() }
-    var tab by remember { mutableStateOf(Tab.CARDS) }
-    var openCard by remember { mutableStateOf<StampCard?>(null) }
-    var redeem by remember { mutableStateOf<Reward?>(null) }
+fun VuelvoApp(appViewModel: AppViewModel = hiltViewModel()) {
+    val cardsViewModel: CardsViewModel = hiltViewModel()
+    val rewardsViewModel: RewardsViewModel = hiltViewModel()
+    val scanViewModel: ScanViewModel = hiltViewModel()
+
+    val cards by cardsViewModel.cards.collectAsStateWithLifecycle()
+    val readyCount by cardsViewModel.readyCount.collectAsStateWithLifecycle()
+    val available by rewardsViewModel.available.collectAsStateWithLifecycle()
+    val history by rewardsViewModel.history.collectAsStateWithLifecycle()
+
+    val tab = appViewModel.tab
+    val openCardId = appViewModel.openCardId
+    val redeem = appViewModel.redeemReward
 
     val navInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-    val contentBottom = 104.dp + navInset
+    // Leave room for the opaque tab-bar surface (BarContentHeight + system nav) plus a margin.
+    val contentBottom = BarContentHeight + navInset + 16.dp
 
     Box(Modifier.fillMaxSize().background(VuBg)) {
         when (tab) {
-            Tab.CARDS -> CardsScreen(state, onOpen = { openCard = it }, bottomInset = contentBottom)
-            Tab.SCAN -> ScanScreen(onScan = { state.scan() }, bottomInset = contentBottom)
-            Tab.REWARDS -> RewardsScreen(state, onRedeem = { redeem = it }, bottomInset = contentBottom)
+            Tab.CARDS -> CardsScreen(
+                cards = cards,
+                readyCount = readyCount,
+                onOpen = { appViewModel.openCard(it.id) },
+                bottomInset = contentBottom,
+            )
+            Tab.SCAN -> ScanScreen(
+                onScan = scanViewModel::simulateScan,
+                pendingScan = appViewModel.pendingExternalScan,
+                onPendingConsumed = { appViewModel.consumeExternalScan() },
+                onReward = { appViewModel.showRewardCelebration(it) },
+                bottomInset = contentBottom,
+            )
+            Tab.REWARDS -> RewardsScreen(
+                available = available,
+                history = history,
+                onRedeem = { appViewModel.showRedeem(it) },
+                bottomInset = contentBottom,
+            )
         }
 
         TabBar(
             tab = tab,
-            onSelect = { tab = it },
+            onSelect = { appViewModel.selectTab(it) },
             modifier = Modifier.align(Alignment.BottomCenter),
         )
 
-        val current = openCard?.let { oc -> state.cards.find { it.id == oc.id } ?: oc }
-        if (current != null) {
-            CardDetail(
-                card = current,
-                onClose = { openCard = null },
-                onGoScan = { openCard = null; tab = Tab.SCAN },
+        if (openCardId != null) {
+            CardDetailRoute(
+                cardId = openCardId,
+                onClose = { appViewModel.closeCard() },
+                onGoScan = { appViewModel.closeCard(); appViewModel.selectTab(Tab.SCAN) },
             )
         }
 
         redeem?.let { r ->
-            RedeemSheet(
+            RedeemFlow(
                 reward = r,
-                onConfirm = { state.redeem(r); redeem = null },
-                onClose = { redeem = null },
+                onConfirm = { rewardsViewModel.confirmRedeem(r); appViewModel.dismissRedeem() },
+                onClose = { appViewModel.dismissRedeem() },
+            )
+        }
+
+        // Full-screen celebration sits above the tab bar so its buttons aren't clipped.
+        appViewModel.rewardCelebration?.let { r ->
+            StampAddedModal(
+                result = r,
+                onClose = { appViewModel.dismissRewardCelebration() },
+                onViewReward = {
+                    appViewModel.dismissRewardCelebration()
+                    appViewModel.selectTab(Tab.REWARDS)
+                },
             )
         }
     }
 
-    BackHandler(enabled = openCard != null || redeem != null || tab != Tab.CARDS) {
+    BackHandler(
+        enabled = openCardId != null || redeem != null ||
+            appViewModel.rewardCelebration != null || tab != Tab.CARDS,
+    ) {
         when {
-            redeem != null -> redeem = null
-            openCard != null -> openCard = null
-            else -> tab = Tab.CARDS
+            appViewModel.rewardCelebration != null -> appViewModel.dismissRewardCelebration()
+            redeem != null -> appViewModel.dismissRedeem()
+            openCardId != null -> appViewModel.closeCard()
+            else -> appViewModel.selectTab(Tab.CARDS)
         }
     }
 }
 
 @Composable
-private fun TabBar(tab: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier
-            .fillMaxWidth()
-            .background(VuCard)
-            .drawBehind {
-                drawLine(VuLine, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx())
-            }
-            .navigationBarsPadding()
-            .padding(top = 10.dp, bottom = 14.dp),
-        verticalAlignment = Alignment.Top,
-    ) {
-        TabItem(Modifier.weight(1f), "Tarjetas", VuelvoIcons.StampCard, tab == Tab.CARDS) { onSelect(Tab.CARDS) }
+private fun CardDetailRoute(
+    cardId: String,
+    onClose: () -> Unit,
+    onGoScan: () -> Unit,
+    viewModel: CardDetailViewModel = hiltViewModel(),
+) {
+    androidx.compose.runtime.LaunchedEffect(cardId) { viewModel.setCardId(cardId) }
+    val card by viewModel.card.collectAsStateWithLifecycle()
+    card?.let { CardDetail(card = it, onClose = onClose, onGoScan = onGoScan) }
+}
 
-        Column(
-            Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally,
+@Composable
+private fun TabBar(tab: Tab, onSelect: (Tab) -> Unit, modifier: Modifier = Modifier) {
+    val navInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    Box(modifier.fillMaxWidth().height(FabOverhang + BarContentHeight + navInset)) {
+        // opaque bar surface, pinned to the bottom
+        Row(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .height(BarContentHeight + navInset)
+                .background(VuCard)
+                .drawBehind {
+                    drawLine(VuLine, Offset(0f, 0f), Offset(size.width, 0f), strokeWidth = 1.dp.toPx())
+                }
+                .padding(top = 6.dp, bottom = navInset + 6.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            TabItem(Modifier.weight(1f), "Tarjetas", VuelvoIcons.StampCard, tab == Tab.CARDS) { onSelect(Tab.CARDS) }
+            // center slot holds just the label; the button is overlaid above
+            Box(Modifier.weight(1f), contentAlignment = Alignment.BottomCenter) {
+                Text(
+                    "Escanear",
+                    fontSize = 11.sp,
+                    fontWeight = if (tab == Tab.SCAN) FontWeight.ExtraBold else FontWeight.Bold,
+                    color = if (tab == Tab.SCAN) VuAccentDeep else VuInk2,
+                )
+            }
+            TabItem(Modifier.weight(1f), "Recompensas", VuelvoIcons.Gift, tab == Tab.REWARDS) { onSelect(Tab.REWARDS) }
+        }
+
+        // raised scan button — overflows above the bar but stays inside the box, so it's tappable
+        Box(
+            Modifier
+                .align(Alignment.TopCenter)
+                .size(70.dp)
+                .clip(CircleShape)
+                .background(Color.White),
+            contentAlignment = Alignment.Center,
         ) {
             Box(
                 Modifier
-                    .offset(y = (-22).dp)
-                    .size(70.dp)
+                    .size(62.dp)
+                    .shadow(10.dp, CircleShape, spotColor = VuAccentDeep)
                     .clip(CircleShape)
-                    .background(Color.White),
+                    .background(Brush.linearGradient(listOf(VuAccent, VuAccentDeep)))
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                    ) { onSelect(Tab.SCAN) },
                 contentAlignment = Alignment.Center,
             ) {
-                Box(
-                    Modifier
-                        .size(62.dp)
-                        .shadow(10.dp, CircleShape, spotColor = VuAccentDeep)
-                        .clip(CircleShape)
-                        .background(Brush.linearGradient(listOf(VuAccent, VuAccentDeep)))
-                        .clickable { onSelect(Tab.SCAN) },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(VuelvoIcons.Nfc, null, Modifier.size(32.dp), tint = Color.White)
-                }
+                Icon(VuelvoIcons.Nfc, null, Modifier.size(32.dp), tint = Color.White)
             }
-            Text(
-                "Escanear",
-                modifier = Modifier.offset(y = (-14).dp),
-                fontSize = 11.sp,
-                fontWeight = if (tab == Tab.SCAN) FontWeight.ExtraBold else FontWeight.Bold,
-                color = if (tab == Tab.SCAN) VuAccentDeep else VuInk2,
-            )
         }
-
-        TabItem(Modifier.weight(1f), "Recompensas", VuelvoIcons.Gift, tab == Tab.REWARDS) { onSelect(Tab.REWARDS) }
     }
 }
+
+/** Opaque tab-bar surface height (excludes the system nav inset, added separately). */
+private val BarContentHeight = 66.dp
+
+/** How far the raised scan button overflows above the bar surface. */
+private val FabOverhang = 28.dp
 
 @Composable
 private fun TabItem(modifier: Modifier, label: String, icon: ImageVector, active: Boolean, onClick: () -> Unit) {

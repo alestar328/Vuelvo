@@ -1,7 +1,6 @@
 package com.delta.vuelvo.ui.screens
 
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.InfiniteTransition
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -17,7 +16,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -52,8 +50,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
-import com.delta.vuelvo.ui.ScanResult
+import com.delta.vuelvo.domain.ScanResult
 import com.delta.vuelvo.ui.components.Stamps
+import com.delta.vuelvo.ui.viewmodel.ExternalScan
 import com.delta.vuelvo.ui.icons.VuelvoIcons
 import com.delta.vuelvo.ui.theme.VuAccent
 import com.delta.vuelvo.ui.theme.VuAccentDeep
@@ -66,34 +65,62 @@ import com.delta.vuelvo.ui.theme.VuInk3
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private enum class Phase { IDLE, SCANNING, SUCCESS, REWARD }
+private enum class Phase { IDLE, SCANNING, SUCCESS }
 
 @Composable
-fun ScanScreen(onScan: () -> ScanResult, bottomInset: androidx.compose.ui.unit.Dp) {
+fun ScanScreen(
+    onScan: suspend () -> ScanResult,
+    pendingScan: ExternalScan?,
+    onPendingConsumed: () -> Unit,
+    onReward: (ScanResult) -> Unit,
+    bottomInset: androidx.compose.ui.unit.Dp,
+) {
     var phase by remember { mutableStateOf(Phase.IDLE) }
     var result by remember { mutableStateOf<ScanResult?>(null) }
     val scope = rememberCoroutineScope()
 
-    fun tap() {
-        if (phase == Phase.SUCCESS || phase == Phase.REWARD) {
-            phase = Phase.IDLE; result = null; return
+    fun resetScan() {
+        phase = Phase.IDLE
+        result = null
+        onPendingConsumed()
+    }
+
+    // Show results pushed in from outside (NFC tag / deep link) without the simulated read.
+    LaunchedEffect(pendingScan) {
+        val res = pendingScan?.result ?: return@LaunchedEffect
+        if (res.gotReward) {
+            // Completing a card hands off to the full-screen celebration above the tab bar.
+            onReward(res)
+            resetScan()
+            return@LaunchedEffect
         }
+        result = res
+        phase = Phase.SUCCESS
+        delay(2800)
+        resetScan()
+    }
+
+    fun tap() {
+        if (phase == Phase.SUCCESS) { resetScan(); return }
         if (phase != Phase.IDLE) return
         phase = Phase.SCANNING
         scope.launch {
             delay(1300)
             val res = onScan()
-            result = res
-            phase = if (res.gotReward) Phase.REWARD else Phase.SUCCESS
-            delay(if (res.gotReward) 4200 else 2800)
-            phase = Phase.IDLE
-            result = null
+            if (res.gotReward) {
+                onReward(res)
+                phase = Phase.IDLE
+                result = null
+            } else {
+                result = res
+                phase = Phase.SUCCESS
+                delay(2800)
+                resetScan()
+            }
         }
     }
 
     Box(Modifier.fillMaxSize().background(VuBg)) {
-        if (phase == Phase.REWARD) Confetti()
-
         Column(
             Modifier
                 .fillMaxSize()
@@ -136,7 +163,7 @@ fun ScanScreen(onScan: () -> ScanResult, bottomInset: androidx.compose.ui.unit.D
                     Modifier.padding(top = 18.dp).widthIn(max = 300.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    val done = phase == Phase.SUCCESS || phase == Phase.REWARD
+                    val done = phase == Phase.SUCCESS
                     Text(
                         title(phase, result),
                         fontSize = 21.sp,
@@ -168,20 +195,6 @@ fun ScanScreen(onScan: () -> ScanResult, bottomInset: androidx.compose.ui.unit.D
                         }
                     }
 
-                    if (phase == Phase.REWARD && result != null) {
-                        Row(
-                            Modifier
-                                .padding(top = 14.dp)
-                                .clip(RoundedCornerShape(999.dp))
-                                .background(Brush.linearGradient(listOf(VuAccent, VuAccentDeep)))
-                                .padding(horizontal = 16.dp, vertical = 10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(VuelvoIcons.Gift, null, Modifier.size(18.dp), tint = Color.White)
-                            Text(result!!.reward ?: "", fontSize = 14.5.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold, color = Color.White)
-                        }
-                    }
                 }
             }
 
@@ -201,19 +214,17 @@ private fun title(phase: Phase, r: ScanResult?): String = when (phase) {
     Phase.IDLE -> "Listo para escanear"
     Phase.SCANNING -> "Leyendo tag NFC…"
     Phase.SUCCESS -> if (r != null) "+1 sello · ${r.cardName}" else ""
-    Phase.REWARD -> "¡Recompensa conseguida!"
 }
 
 private fun subtitle(phase: Phase, r: ScanResult?): String = when (phase) {
     Phase.IDLE -> "Acerca la parte superior de tu teléfono al tag NFC del comercio para sumar un sello."
     Phase.SCANNING -> "Mantén el teléfono cerca del tag."
     Phase.SUCCESS -> if (r != null) "Llevas ${r.newCount} de ${r.max} sellos." else ""
-    Phase.REWARD -> if (r != null) "${r.reward} en ${r.cardName}. Disponible en Recompensas." else ""
 }
 
 @Composable
 private fun NfcTarget(phase: Phase) {
-    val done = phase == Phase.SUCCESS || phase == Phase.REWARD
+    val done = phase == Phase.SUCCESS
     val reading = phase == Phase.SCANNING
 
     // idle floating
@@ -295,43 +306,4 @@ private fun PulseRing(delayMillis: Int) {
             .alpha(alpha)
             .border(2.dp, VuAccent, CircleShape),
     )
-}
-
-@Composable
-private fun Confetti() {
-    val colors = listOf(
-        Color(0xFF9B5CFF), Color(0xFF7B3CE6), Color(0xFFFFC24B),
-        Color(0xFFFF6FA5), Color(0xFF4CD3A5), Color(0xFFB083FF),
-    )
-    data class Piece(val x: Float, val delay: Int, val sizeDp: Float, val color: Color)
-    val pieces = remember {
-        List(26) {
-            Piece(
-                x = Math.random().toFloat(),
-                delay = (Math.random() * 400).toInt(),
-                sizeDp = 6f + (Math.random() * 7f).toFloat(),
-                color = colors[it % colors.size],
-            )
-        }
-    }
-    BoxWithConstraints(Modifier.fillMaxSize()) {
-        val w = maxWidth
-        val h = maxHeight
-        pieces.forEach { p ->
-            val anim = remember { Animatable(0f) }
-            LaunchedEffect(Unit) {
-                delay(p.delay.toLong())
-                anim.animateTo(1f, tween(1400, easing = EaseIn))
-            }
-            Box(
-                Modifier
-                    .offset(x = w * p.x, y = h * 0.34f + (220.dp * anim.value))
-                    .size(width = p.sizeDp.dp, height = (p.sizeDp * 1.4f).dp)
-                    .alpha(1f - anim.value)
-                    .scale(1f)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(p.color),
-            )
-        }
-    }
 }

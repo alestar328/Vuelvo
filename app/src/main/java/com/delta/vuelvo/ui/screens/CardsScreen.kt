@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.delta.vuelvo.data.StampCard
 import com.delta.vuelvo.data.vector
-import com.delta.vuelvo.ui.VuelvoState
 import com.delta.vuelvo.ui.components.Header
 import com.delta.vuelvo.ui.components.Stamps
 import com.delta.vuelvo.ui.icons.VuelvoIcons
@@ -40,19 +39,19 @@ import com.delta.vuelvo.ui.theme.VuInk3
 
 @Composable
 fun CardsScreen(
-    state: VuelvoState,
+    cards: List<StampCard>,
+    readyCount: Int,
     onOpen: (StampCard) -> Unit,
     bottomInset: androidx.compose.ui.unit.Dp,
 ) {
-    val ready = state.readyCount
-    val subtitle = "${state.cards.size} comercios · $ready ${if (ready != 1) "recompensas listas" else "recompensa lista"}"
+    val subtitle = "${cards.size} comercios · $readyCount ${if (readyCount != 1) "recompensas listas" else "recompensa lista"}"
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(VuBg),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomInset),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item { Header("Tarjetas", subtitle) }
-        items(state.cards, key = { it.id }) { card -> CardRow(card, onOpen) }
+        items(cards, key = { it.id }) { card -> CardRow(card, onOpen) }
     }
 }
 
