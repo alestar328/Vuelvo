@@ -90,6 +90,7 @@ fun VuelvoApp(appViewModel: AppViewModel = hiltViewModel()) {
                 pendingScan = appViewModel.pendingExternalScan,
                 onPendingConsumed = { appViewModel.consumeExternalScan() },
                 onReward = { appViewModel.showRewardCelebration(it) },
+                onClose = { appViewModel.selectTab(Tab.CARDS) },
                 bottomInset = contentBottom,
             )
             Tab.REWARDS -> RewardsScreen(

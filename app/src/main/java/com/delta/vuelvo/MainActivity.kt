@@ -65,24 +65,46 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun onTagDiscovered(tag: Tag) {
-        val uri = readNdefUri(tag) ?: return
-        VuelvoUri.parse(uri)?.let { payload ->
-            runOnUiThread { appViewModel.onStampPayload(payload) }
-        }
-    }
-
-    /** Reads the URI from the first NDEF record on a tag, or null if unreadable. */
-    private fun readNdefUri(tag: Tag): String? {
-        val ndef = Ndef.get(tag) ?: return null
-        return try {
+        // Runs on the reader-mode worker thread, so blocking I/O here is fine.
+        val ndef = Ndef.get(tag) ?: return
+        try {
             ndef.connect()
-            val message = ndef.ndefMessage ?: ndef.cachedNdefMessage
-            val record = message?.records?.firstOrNull() ?: return null
-            record.toUri()?.toString() ?: String(record.payload, Charsets.UTF_8)
+            val uri = readNdefUri(ndef) ?: return
+            VuelvoUri.parse(uri)?.let { payload ->
+                runOnUiThread { appViewModel.onStampPayload(payload) }
+            }
+            // Hold the connection open until the tag physically leaves the field.
+            // Otherwise reader mode immediately rediscovers the still-present tag
+            // after we close it, stamping again and again while it stays pressed
+            // against the phone. This makes each approach count as a single stamp.
+            awaitTagRemoval(ndef)
         } catch (_: Exception) {
-            null
+            // Unreadable tag or removed mid-read — ignore.
         } finally {
             runCatching { ndef.close() }
         }
+    }
+
+    /** Reads the URI from the first NDEF record on an already-connected tag, or null. */
+    private fun readNdefUri(ndef: Ndef): String? {
+        val message = ndef.ndefMessage ?: ndef.cachedNdefMessage
+        val record = message?.records?.firstOrNull() ?: return null
+        return record.toUri()?.toString() ?: String(record.payload, Charsets.UTF_8)
+    }
+
+    /** Polls the tag until it leaves the field; [Ndef.getNdefMessage] throws once it's gone. */
+    private fun awaitTagRemoval(ndef: Ndef) {
+        while (ndef.isConnected) {
+            try {
+                ndef.ndefMessage
+                Thread.sleep(TAG_PRESENCE_POLL_MS)
+            } catch (_: Exception) {
+                return
+            }
+        }
+    }
+
+    private companion object {
+        const val TAG_PRESENCE_POLL_MS = 300L
     }
 }

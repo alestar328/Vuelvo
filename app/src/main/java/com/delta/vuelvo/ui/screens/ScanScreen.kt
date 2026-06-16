@@ -73,6 +73,7 @@ fun ScanScreen(
     pendingScan: ExternalScan?,
     onPendingConsumed: () -> Unit,
     onReward: (ScanResult) -> Unit,
+    onClose: () -> Unit,
     bottomInset: androidx.compose.ui.unit.Dp,
 ) {
     var phase by remember { mutableStateOf(Phase.IDLE) }
@@ -92,12 +93,16 @@ fun ScanScreen(
             // Completing a card hands off to the full-screen celebration above the tab bar.
             onReward(res)
             resetScan()
+            onClose()
             return@LaunchedEffect
         }
         result = res
         phase = Phase.SUCCESS
         delay(2800)
         resetScan()
+        // Leave the scan screen once the stamp is confirmed so it can't keep
+        // counting if the phone is still resting on the tag.
+        onClose()
     }
 
     fun tap() {

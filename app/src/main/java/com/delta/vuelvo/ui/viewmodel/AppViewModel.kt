@@ -43,6 +43,11 @@ class AppViewModel @Inject constructor(
         private set
     private var scanCounter = 0L
 
+    // Guards against the same tag being applied twice in quick succession
+    // (duplicate NFC callbacks / deep-link re-delivery).
+    private var lastStampId: String? = null
+    private var lastStampAt = 0L
+
     fun selectTab(value: Tab) { tab = value }
     fun openCard(id: String) { openCardId = id }
     fun closeCard() { openCardId = null }
@@ -54,6 +59,10 @@ class AppViewModel @Inject constructor(
 
     /** Single entry point for NFC tags and `vuelvo://` deep links. */
     fun onStampPayload(payload: StampPayload) {
+        val now = System.currentTimeMillis()
+        if (payload.id == lastStampId && now - lastStampAt < STAMP_DEBOUNCE_MS) return
+        lastStampId = payload.id
+        lastStampAt = now
         viewModelScope.launch {
             val result = repository.applyStamp(payload)
             openCardId = null
@@ -61,5 +70,9 @@ class AppViewModel @Inject constructor(
             tab = Tab.SCAN
             pendingExternalScan = ExternalScan(scanCounter++, result)
         }
+    }
+
+    private companion object {
+        const val STAMP_DEBOUNCE_MS = 1500L
     }
 }
