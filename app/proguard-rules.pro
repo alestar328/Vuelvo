@@ -19,3 +19,14 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Keep crash stack traces readable.
+-keepattributes SourceFile,LineNumberTable
+
+# Room — keep entities/DAOs referenced by the generated database code.
+-keep class * extends androidx.room.RoomDatabase { *; }
+-dontwarn androidx.room.paging.**
+
+# Hilt / Dagger generated components.
+-keep,allowobfuscation @interface dagger.hilt.android.lifecycle.HiltViewModel
+-keep class * extends androidx.lifecycle.ViewModel { *; }
