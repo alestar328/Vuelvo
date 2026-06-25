@@ -1,6 +1,7 @@
 package com.delta.vuelvo.data.repository
 
 import android.content.Context
+import com.delta.vuelvo.BuildConfig
 import com.delta.vuelvo.data.Reward
 import com.delta.vuelvo.data.StampCard
 import com.delta.vuelvo.data.VuelvoData
@@ -37,8 +38,14 @@ class VuelvoRepository @Inject constructor(
 
     fun card(id: String): Flow<StampCard?> = cardDao.observeById(id).map { it?.toUi() }
 
-    /** Inserts the initial catalogue once, guarded by a SharedPreferences flag. */
+    /**
+     * Inserts the sample catalogue once, guarded by a SharedPreferences flag.
+     * Only seeds in debug builds: testers and Play Store users start with an empty
+     * app and only get cards by scanning a real NFC tag. The sample data is purely
+     * a development convenience.
+     */
     suspend fun seedIfNeeded() {
+        if (!BuildConfig.DEBUG) return
         if (prefs.getBoolean(KEY_SEEDED, false)) return
         cardDao.insertAll(VuelvoData.cards.map { it.toEntity() })
         val now = System.currentTimeMillis()
@@ -108,6 +115,9 @@ class VuelvoRepository @Inject constructor(
             )
         }
     }
+
+    /** Removes a card. Earned rewards stay in the rewards history. */
+    suspend fun deleteCard(id: String) = cardDao.deleteById(id)
 
     /** Marks a reward as redeemed and resets its originating card's stamp count. */
     suspend fun confirmRedeem(reward: Reward) {

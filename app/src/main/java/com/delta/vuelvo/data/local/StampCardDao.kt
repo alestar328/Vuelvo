@@ -26,6 +26,9 @@ interface StampCardDao {
     @Upsert
     suspend fun upsert(card: StampCardEntity)
 
+    @Query("DELETE FROM stamp_cards WHERE id = :id")
+    suspend fun deleteById(id: String)
+
     @Query("SELECT COUNT(*) FROM stamp_cards")
     suspend fun count(): Int
 }

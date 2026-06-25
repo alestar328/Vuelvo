@@ -83,6 +83,7 @@ fun VuelvoApp(appViewModel: AppViewModel = hiltViewModel()) {
                 cards = cards,
                 readyCount = readyCount,
                 onOpen = { appViewModel.openCard(it.id) },
+                onDelete = { cardsViewModel.deleteCard(it.id) },
                 bottomInset = contentBottom,
             )
             Tab.SCAN -> ScanScreen(

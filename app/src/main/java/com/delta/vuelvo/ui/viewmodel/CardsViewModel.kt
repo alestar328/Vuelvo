@@ -10,11 +10,12 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class CardsViewModel @Inject constructor(
-    repository: VuelvoRepository,
+    private val repository: VuelvoRepository,
 ) : ViewModel() {
 
     val cards: StateFlow<List<StampCard>> = repository.cards
@@ -24,4 +25,8 @@ class CardsViewModel @Inject constructor(
     val readyCount: StateFlow<Int> = combine(repository.cards, repository.rewards) { cards, rewards ->
         cards.count { it.ready } + rewards.count { it.status == RewardStatus.AVAILABLE }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    fun deleteCard(id: String) {
+        viewModelScope.launch { repository.deleteCard(id) }
+    }
 }

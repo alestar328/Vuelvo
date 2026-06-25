@@ -117,6 +117,14 @@ object VuelvoIcons {
             "M12 8S10.5 4 8.3 4.6C6.8 5 7 7.4 9 8M12 8s1.5-4 3.7-3.4C17.2 5 17 7.4 15 8",
         )
     }
+    val Trash by lazy {
+        strokeIcon(
+            "M4 7h16",
+            "M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2",
+            "M6.5 7l.9 12a1 1 0 0 0 1 0.95h7.2a1 1 0 0 0 1-0.95L17.5 7",
+            "M10 11v6M14 11v6",
+        )
+    }
     val Check by lazy { strokeIcon("M4.5 12.5 9.5 17.5 19.5 6.5") }
     val Chevron by lazy { strokeIcon("M9 5l7 7-7 7") }
     val ChevronLeft by lazy { strokeIcon("M15 5l-7 7 7 7") }
