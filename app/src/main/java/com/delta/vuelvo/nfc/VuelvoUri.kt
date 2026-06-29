@@ -2,12 +2,14 @@ package com.delta.vuelvo.nfc
 
 import android.net.Uri
 
-/** Parsed payload of a `vuelvo://stamp?id=…&name=…&max=…&reward=…` URI. */
+/** Parsed payload of a `vuelvo://stamp?uuid=…&id=…&name=…&max=…&reward=…` URI. */
 data class StampPayload(
     val id: String,
     val name: String,
     val max: Int,
     val reward: String,
+    /** Per-tag unique identifier carried by the deep link; null on older tags that omit it. */
+    val uuid: String? = null,
 )
 
 /**
@@ -30,6 +32,7 @@ object VuelvoUri {
         val name = uri.getQueryParameter("name")?.takeIf { it.isNotBlank() } ?: id
         val max = uri.getQueryParameter("max")?.toIntOrNull()?.takeIf { it > 0 } ?: DEFAULT_MAX
         val reward = uri.getQueryParameter("reward")?.takeIf { it.isNotBlank() } ?: "Recompensa"
-        return StampPayload(id = id, name = name, max = max, reward = reward)
+        val uuid = uri.getQueryParameter("uuid")?.takeIf { it.isNotBlank() }
+        return StampPayload(id = id, name = name, max = max, reward = reward, uuid = uuid)
     }
 }

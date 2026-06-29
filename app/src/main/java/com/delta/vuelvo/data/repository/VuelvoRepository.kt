@@ -71,6 +71,7 @@ class VuelvoRepository @Inject constructor(
             stamps = 0,
             maxStamps = payload.max,
             reward = payload.reward,
+            uuid = payload.uuid,
         )
         return addStamp(card)
     }

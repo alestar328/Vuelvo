@@ -19,6 +19,8 @@ data class StampCardEntity(
     val stamps: Int,
     val maxStamps: Int,
     val reward: String,
+    /** Per-tag unique identifier from the scanned deep link; null for cards created before it existed. */
+    val uuid: String? = null,
 ) {
     val isReady: Boolean get() = stamps >= maxStamps
     val remaining: Int get() = maxStamps - stamps
