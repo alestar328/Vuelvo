@@ -35,6 +35,8 @@ fun StampCardEntity.toUi(): StampCard = StampCard(
     stamps = stamps,
     max = maxStamps,
     reward = reward,
+    logoRef = logoRef,
+    coverRef = coverRef,
 )
 
 fun StampCard.toEntity(): StampCardEntity = StampCardEntity(
@@ -47,6 +49,8 @@ fun StampCard.toEntity(): StampCardEntity = StampCardEntity(
     stamps = stamps,
     maxStamps = max,
     reward = reward,
+    logoRef = logoRef,
+    coverRef = coverRef,
 )
 
 // --- Reward ----------------------------------------------------------------

@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.NFC" />
+    <!-- For downloading the comercio's logo/cover images from Firebase Storage (see VuelvoStorage). -->
+    <uses-permission android:name="android.permission.INTERNET" />
     <!-- NFC is optional so the app still installs on devices/emulators without it. -->
     <uses-feature
         android:name="android.hardware.nfc"

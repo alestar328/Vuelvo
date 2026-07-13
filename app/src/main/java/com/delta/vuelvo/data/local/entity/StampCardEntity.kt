@@ -21,6 +21,10 @@ data class StampCardEntity(
     val reward: String,
     /** Per-tag unique identifier from the scanned deep link; null for cards created before it existed. */
     val uuid: String? = null,
+    /** Firebase Storage object references for the logo/cover (see [com.delta.vuelvo.data.VuelvoStorage]);
+     * null for cards created before this existed or whose tag didn't set one. */
+    val logoRef: String? = null,
+    val coverRef: String? = null,
 ) {
     val isReady: Boolean get() = stamps >= maxStamps
     val remaining: Int get() = maxStamps - stamps

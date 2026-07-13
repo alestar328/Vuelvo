@@ -25,8 +25,14 @@ data class StampCard(
     val stamps: Int,
     val max: Int,
     val reward: String,
+    /** Firebase Storage object reference for the logo/cover (see [VuelvoStorage]); null if the tag
+     * didn't set one. */
+    val logoRef: String? = null,
+    val coverRef: String? = null,
 ) {
     val ready: Boolean get() = stamps >= max
+    val logoUrl: String? get() = logoRef?.let(VuelvoStorage::downloadUrl)
+    val coverUrl: String? get() = coverRef?.let(VuelvoStorage::downloadUrl)
 }
 
 enum class RewardStatus { AVAILABLE, REDEEMED }

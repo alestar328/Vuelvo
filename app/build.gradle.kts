@@ -91,6 +91,9 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     ksp(libs.androidx.room.compiler)
 
+    // Network images — logo/cover downloaded from Firebase Storage (see VuelvoStorage)
+    implementation(libs.coil.compose)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -25,11 +25,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.delta.vuelvo.data.StampCard
-import com.delta.vuelvo.data.vector
+import com.delta.vuelvo.ui.components.CardLogoOrSymbol
 import com.delta.vuelvo.ui.components.Stamps
 import com.delta.vuelvo.ui.icons.VuelvoIcons
 import com.delta.vuelvo.ui.theme.VuAccent
@@ -55,39 +57,67 @@ fun CardDetail(card: StampCard, onClose: () -> Unit, onGoScan: () -> Unit) {
             .verticalScroll(rememberScrollState()),
     ) {
         // hero
-        Column(
+        val hasCover = card.coverUrl != null
+        Box(
             Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp))
-                .background(Brush.linearGradient(listOf(card.tile, Color.White)))
-                .statusBarsPadding()
-                .padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 26.dp),
+                .clip(RoundedCornerShape(bottomStart = 30.dp, bottomEnd = 30.dp)),
         ) {
-            Box(
-                Modifier
-                    .size(40.dp)
-                    .shadow(4.dp, RoundedCornerShape(999.dp))
-                    .clip(RoundedCornerShape(999.dp))
-                    .background(Color.White.copy(alpha = 0.7f))
-                    .clickable { onClose() },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(VuelvoIcons.ChevronLeft, null, Modifier.size(20.dp), tint = VuInk)
+            // backdrop: the comercio's cover photo (darkened for legibility) if the tag included one,
+            // else the existing tile-color gradient
+            if (card.coverUrl != null) {
+                AsyncImage(
+                    model = card.coverUrl,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.matchParentSize(),
+                )
+                Box(
+                    Modifier
+                        .matchParentSize()
+                        .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.4f), Color.Black.copy(alpha = 0.1f)))),
+                )
+            } else {
+                Box(Modifier.matchParentSize().background(Brush.linearGradient(listOf(card.tile, Color.White))))
             }
-            Row(
-                modifier = Modifier.padding(top = 18.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(14.dp),
+
+            Column(
+                Modifier
+                    .statusBarsPadding()
+                    .padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 26.dp),
             ) {
                 Box(
-                    Modifier.size(58.dp).shadow(6.dp, RoundedCornerShape(17.dp)).clip(RoundedCornerShape(17.dp)).background(Color.White),
+                    Modifier
+                        .size(40.dp)
+                        .shadow(4.dp, RoundedCornerShape(999.dp))
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(Color.White.copy(alpha = 0.7f))
+                        .clickable { onClose() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(card.icon.vector, null, Modifier.size(30.dp), tint = card.ink)
+                    Icon(VuelvoIcons.ChevronLeft, null, Modifier.size(20.dp), tint = VuInk)
                 }
-                Column {
-                    Text(card.name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp, color = VuInk)
-                    Text(card.category, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold, color = VuInk2)
+                Row(
+                    modifier = Modifier.padding(top = 18.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    Box(
+                        Modifier.size(58.dp).shadow(6.dp, RoundedCornerShape(17.dp)).clip(RoundedCornerShape(17.dp)).background(Color.White),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CardLogoOrSymbol(card = card, size = 58.dp, symbolSize = 30.dp)
+                    }
+                    Column {
+                        Text(
+                            card.name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold,
+                            letterSpacing = (-0.5).sp, color = if (hasCover) Color.White else VuInk,
+                        )
+                        Text(
+                            card.category, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold,
+                            color = if (hasCover) Color.White.copy(alpha = 0.85f) else VuInk2,
+                        )
+                    }
                 }
             }
         }

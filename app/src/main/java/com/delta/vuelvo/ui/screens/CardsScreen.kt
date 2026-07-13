@@ -35,7 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.delta.vuelvo.data.StampCard
-import com.delta.vuelvo.data.vector
+import com.delta.vuelvo.ui.components.CardLogoOrSymbol
 import com.delta.vuelvo.ui.components.Header
 import com.delta.vuelvo.ui.components.Stamps
 import com.delta.vuelvo.ui.icons.VuelvoIcons
@@ -160,7 +160,7 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
                 Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(card.tile),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(card.icon.vector, null, Modifier.size(24.dp), tint = card.ink)
+                CardLogoOrSymbol(card = card, size = 46.dp, symbolSize = 24.dp)
             }
             Column(Modifier.weight(1f)) {
                 Text(card.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp, color = VuInk)
