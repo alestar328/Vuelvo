@@ -31,9 +31,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.delta.vuelvo.data.StampCard
 import com.delta.vuelvo.ui.components.CardLogoOrSymbol
 import com.delta.vuelvo.ui.components.Header
@@ -142,65 +144,82 @@ private val DeleteRed = Color(0xFFE5484D)
 
 @Composable
 private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
-    Column(
+    Box(
         Modifier
             .fillMaxWidth()
             .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = VuInk)
-            .clip(RoundedCornerShape(24.dp))
-            .background(VuCard)
-            .clickable { onOpen(card) }
-            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 18.dp),
+            .clip(RoundedCornerShape(24.dp)),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-        ) {
-            Box(
-                Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(card.tile),
-                contentAlignment = Alignment.Center,
-            ) {
-                CardLogoOrSymbol(card = card, size = 46.dp, symbolSize = 24.dp)
-            }
-            Column(Modifier.weight(1f)) {
-                Text(card.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp, color = VuInk)
-                Text(card.category, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = VuInk2)
-            }
-            if (card.ready) {
-                Text(
-                    "Lista ✦",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = VuAccentDeep,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(VuAccentSoft)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                )
-            } else {
-                Icon(VuelvoIcons.Chevron, null, Modifier.size(18.dp), tint = VuInk3)
-            }
+        // White card by default; if the comercio set a cover, its photo shows through as a subtle
+        // backdrop (tinted with a white scrim so the existing dark text/icons stay legible untouched).
+        Box(Modifier.matchParentSize().background(VuCard))
+        if (card.coverUrl != null) {
+            AsyncImage(
+                model = card.coverUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.matchParentSize(),
+            )
+            Box(Modifier.matchParentSize().background(Color.White.copy(alpha = 0.82f)))
         }
 
-        Stamps(count = card.stamps, max = card.max, size = 26.dp, gap = 9.dp)
-
-        val left = card.max - card.stamps
-        Row(
-            modifier = Modifier.padding(top = 15.dp),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clickable { onOpen(card) }
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 18.dp),
         ) {
-            Row {
-                Text("${card.stamps}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VuInk)
-                Text("/${card.max}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VuInk3)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+            ) {
+                Box(
+                    Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(card.tile),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CardLogoOrSymbol(card = card, size = 46.dp, symbolSize = 24.dp)
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(card.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp, color = VuInk)
+                    Text(card.category, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = VuInk2)
+                }
+                if (card.ready) {
+                    Text(
+                        "Lista ✦",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = VuAccentDeep,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(999.dp))
+                            .background(VuAccentSoft)
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                    )
+                } else {
+                    Icon(VuelvoIcons.Chevron, null, Modifier.size(18.dp), tint = VuInk3)
+                }
             }
-            Text(
-                if (card.ready) "Canjea tu ${card.reward.lowercase()}"
-                else "A $left ${if (left > 1) "sellos" else "sello"} de tu ${card.reward.lowercase()}",
-                fontSize = 13.sp,
-                fontWeight = FontWeight.Medium,
-                color = VuInk2,
-            )
+
+            Stamps(count = card.stamps, max = card.max, size = 26.dp, gap = 9.dp)
+
+            val left = card.max - card.stamps
+            Row(
+                modifier = Modifier.padding(top = 15.dp),
+                verticalAlignment = Alignment.Bottom,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Row {
+                    Text("${card.stamps}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VuInk)
+                    Text("/${card.max}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VuInk3)
+                }
+                Text(
+                    if (card.ready) "Canjea tu ${card.reward.lowercase()}"
+                    else "A $left ${if (left > 1) "sellos" else "sello"} de tu ${card.reward.lowercase()}",
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = VuInk2,
+                )
+            }
         }
     }
 }
