@@ -160,7 +160,7 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.matchParentSize(),
             )
-            Box(Modifier.matchParentSize().background(Color.White.copy(alpha = 0.82f)))
+            Box(Modifier.matchParentSize().background(Color.White.copy(alpha = 0.65f)))
         }
 
         Column(
