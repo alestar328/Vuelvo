@@ -102,12 +102,14 @@ fun CardDetail(card: StampCard, onClose: () -> Unit, onGoScan: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    Box(
-                        Modifier.size(58.dp).shadow(6.dp, RoundedCornerShape(17.dp)).clip(RoundedCornerShape(17.dp)).background(Color.White),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CardLogoOrSymbol(card = card, size = 58.dp, symbolSize = 30.dp)
-                    }
+                    CardLogoOrSymbol(
+                        card = card,
+                        size = 58.dp,
+                        symbolSize = 30.dp,
+                        shape = RoundedCornerShape(17.dp),
+                        background = Color.White,
+                        elevation = 6.dp,
+                    )
                     Column {
                         Text(
                             card.name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold,

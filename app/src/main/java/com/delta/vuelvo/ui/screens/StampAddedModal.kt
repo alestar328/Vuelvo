@@ -46,8 +46,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.delta.vuelvo.data.vector
 import com.delta.vuelvo.domain.ScanResult
+import com.delta.vuelvo.ui.components.CardLogoOrSymbol
 import com.delta.vuelvo.ui.components.Stamps
 import com.delta.vuelvo.ui.components.VuelvoMark
 import com.delta.vuelvo.ui.icons.VuelvoIcons
@@ -270,15 +270,16 @@ private fun IconDisc(result: ScanResult, reward: Boolean) {
         LaunchedEffect(Unit) {
             pop.animateTo(1f, keyframes { durationMillis = 500; 0f at 0; 1.18f at 270; 1f at 500 })
         }
-        Box(
-            Modifier
-                .size(122.dp)
-                .scale(pop.value)
-                .clip(CircleShape)
-                .background(Color(0x29FFFFFF)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(result.icon.vector, null, Modifier.size(58.dp), tint = Color.White)
+        Box(Modifier.scale(pop.value)) {
+            CardLogoOrSymbol(
+                logoUrl = result.logoUrl,
+                icon = result.icon,
+                size = 122.dp,
+                symbolSize = 58.dp,
+                shape = CircleShape,
+                background = Color(0x29FFFFFF),
+                symbolTint = Color.White,
+            )
         }
 
         // +1 / check badge

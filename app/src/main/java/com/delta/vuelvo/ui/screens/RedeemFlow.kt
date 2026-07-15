@@ -55,7 +55,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.delta.vuelvo.data.Reward
-import com.delta.vuelvo.data.vector
+import com.delta.vuelvo.ui.components.CardLogoOrSymbol
 import com.delta.vuelvo.ui.components.VuelvoMark
 import com.delta.vuelvo.ui.icons.VuelvoIcons
 import com.delta.vuelvo.ui.theme.VuAccentDeep
@@ -133,12 +133,15 @@ private fun RedeemPrep(reward: Reward, onActivate: () -> Unit, onClose: () -> Un
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Box(
-                    Modifier.size(56.dp).clip(RoundedCornerShape(16.dp)).background(reward.tile),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(reward.icon.vector, null, Modifier.size(30.dp), tint = reward.ink)
-                }
+                CardLogoOrSymbol(
+                    logoUrl = reward.logoUrl,
+                    icon = reward.icon,
+                    size = 56.dp,
+                    symbolSize = 30.dp,
+                    shape = RoundedCornerShape(16.dp),
+                    background = reward.tile,
+                    symbolTint = reward.ink,
+                )
                 Column(Modifier.weight(1f)) {
                     Text(reward.name, fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.5).sp, color = VuInk)
                     Text(reward.commerce, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = VuInk2)
@@ -359,12 +362,15 @@ private fun androidx.compose.foundation.layout.ColumnScope.PassActive(
                     .alpha(if (live) 1f else 0.3f)
                     .border(3.dp, ArcBrush, CircleShape),
             )
-            Box(
-                Modifier.size(104.dp).clip(CircleShape).background(Color(0x2EFFFFFF)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(reward.icon.vector, null, Modifier.size(50.dp), tint = Color.White)
-            }
+            CardLogoOrSymbol(
+                logoUrl = reward.logoUrl,
+                icon = reward.icon,
+                size = 104.dp,
+                symbolSize = 50.dp,
+                shape = CircleShape,
+                background = Color(0x2EFFFFFF),
+                symbolTint = Color.White,
+            )
         }
 
         Text(

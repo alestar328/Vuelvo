@@ -95,6 +95,7 @@ class VuelvoRepository @Inject constructor(
                     isAvailable = true,
                     dateLabel = "Hoy",
                     createdAt = System.currentTimeMillis(),
+                    logoRef = card.logoRef,
                 ),
             )
             cardDao.upsert(card.copy(stamps = 0))
@@ -105,6 +106,7 @@ class VuelvoRepository @Inject constructor(
                 newCount = card.maxStamps,
                 max = card.maxStamps,
                 icon = icon,
+                logoRef = card.logoRef,
             )
         } else {
             cardDao.upsert(card.copy(stamps = next))
@@ -115,6 +117,7 @@ class VuelvoRepository @Inject constructor(
                 newCount = next,
                 max = card.maxStamps,
                 icon = icon,
+                logoRef = card.logoRef,
             )
         }
     }

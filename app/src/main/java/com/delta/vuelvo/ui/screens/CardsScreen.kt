@@ -174,12 +174,13 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
             ) {
-                Box(
-                    Modifier.size(46.dp).clip(RoundedCornerShape(14.dp)).background(card.tile),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CardLogoOrSymbol(card = card, size = 46.dp, symbolSize = 24.dp)
-                }
+                CardLogoOrSymbol(
+                    card = card,
+                    size = 46.dp,
+                    symbolSize = 24.dp,
+                    shape = RoundedCornerShape(14.dp),
+                    background = card.tile,
+                )
                 Column(Modifier.weight(1f)) {
                     Text(card.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp, color = VuInk)
                     Text(card.category, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = VuInk2)

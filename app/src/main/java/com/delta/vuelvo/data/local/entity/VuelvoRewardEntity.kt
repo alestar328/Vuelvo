@@ -19,4 +19,5 @@ data class VuelvoRewardEntity(
     val isAvailable: Boolean,
     val dateLabel: String,
     val createdAt: Long,
+    val logoRef: String? = null,
 )

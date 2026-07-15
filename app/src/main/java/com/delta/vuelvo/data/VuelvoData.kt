@@ -47,7 +47,11 @@ data class Reward(
     val ink: Color,
     val status: RewardStatus,
     val date: String,
-)
+    /** Logo of the comercio that minted this reward (see [StampCard.logoRef]). */
+    val logoRef: String? = null,
+) {
+    val logoUrl: String? get() = logoRef?.let(VuelvoStorage::downloadUrl)
+}
 
 /**
  * Initial catalogue seeded into Room on first launch. Card ids match the `vuelvo://stamp?id=…`

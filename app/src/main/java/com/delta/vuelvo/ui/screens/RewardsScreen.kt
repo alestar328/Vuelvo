@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.delta.vuelvo.data.Reward
-import com.delta.vuelvo.data.vector
+import com.delta.vuelvo.ui.components.CardLogoOrSymbol
 import com.delta.vuelvo.ui.components.Header
 import com.delta.vuelvo.ui.icons.VuelvoIcons
 import com.delta.vuelvo.ui.theme.VuAccent
@@ -118,12 +118,15 @@ private fun RewardCard(r: Reward, onRedeem: (Reward) -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            Box(
-                Modifier.size(50.dp).clip(RoundedCornerShape(15.dp)).background(r.tile),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(r.icon.vector, null, Modifier.size(26.dp), tint = r.ink)
-            }
+            CardLogoOrSymbol(
+                logoUrl = r.logoUrl,
+                icon = r.icon,
+                size = 50.dp,
+                symbolSize = 26.dp,
+                shape = RoundedCornerShape(15.dp),
+                background = r.tile,
+                symbolTint = r.ink,
+            )
             Column(Modifier.weight(1f)) {
                 Text(r.name, fontSize = 16.5.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.3).sp, color = VuInk)
                 Text(r.commerce, fontSize = 13.5.sp, fontWeight = FontWeight.SemiBold, color = VuInk2)
@@ -151,12 +154,15 @@ private fun HistoryRow(r: Reward, last: Boolean) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(13.dp),
         ) {
-            Box(
-                Modifier.size(42.dp).clip(RoundedCornerShape(12.dp)).background(VuBg),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(r.icon.vector, null, Modifier.size(22.dp), tint = VuInk3)
-            }
+            CardLogoOrSymbol(
+                logoUrl = r.logoUrl,
+                icon = r.icon,
+                size = 42.dp,
+                symbolSize = 22.dp,
+                shape = RoundedCornerShape(12.dp),
+                background = VuBg,
+                symbolTint = VuInk3,
+            )
             Column(Modifier.weight(1f)) {
                 Text(r.name, fontSize = 15.5.sp, fontWeight = FontWeight.Bold, color = VuInk)
                 Text(r.commerce, fontSize = 13.sp, fontWeight = FontWeight.Medium, color = VuInk3)

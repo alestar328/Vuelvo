@@ -65,6 +65,7 @@ fun VuelvoRewardEntity.toUi(): Reward = Reward(
     ink = inkHex.toColorOrAccent(),
     status = if (isAvailable) RewardStatus.AVAILABLE else RewardStatus.REDEEMED,
     date = dateLabel,
+    logoRef = logoRef,
 )
 
 fun Reward.toEntity(createdAt: Long): VuelvoRewardEntity = VuelvoRewardEntity(
@@ -78,4 +79,5 @@ fun Reward.toEntity(createdAt: Long): VuelvoRewardEntity = VuelvoRewardEntity(
     isAvailable = status == RewardStatus.AVAILABLE,
     dateLabel = date,
     createdAt = createdAt,
+    logoRef = logoRef,
 )
