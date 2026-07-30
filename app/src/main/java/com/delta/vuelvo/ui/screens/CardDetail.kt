@@ -172,7 +172,8 @@ fun CardDetail(card: StampCard, onClose: () -> Unit, onGoScan: () -> Unit) {
                     Icon(VuelvoIcons.Gift, null, Modifier.size(24.dp), tint = if (ready) Color.White else VuAccentDeep)
                 }
                 Column(Modifier.weight(1f)) {
-                    Text(card.reward, fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = if (ready) Color.White else VuInk)
+                    // Generic label until the comercio can actually configure the prize.
+                    Text("Recompensa", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = if (ready) Color.White else VuInk)
                     Text(
                         if (ready) "¡Lista para canjear ahora!"
                         else "Te ${if (left == 1) "falta" else "faltan"} $left ${if (left > 1) "sellos" else "sello"}",

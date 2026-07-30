@@ -201,7 +201,7 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
                 }
             }
 
-            Stamps(count = card.stamps, max = card.max, size = 26.dp, gap = 9.dp)
+            Stamps(count = card.stamps, max = card.max, size = 26.dp, gap = 9.dp, modifier = Modifier.fillMaxWidth())
 
             val left = card.max - card.stamps
             Row(
@@ -214,8 +214,10 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
                     Text("/${card.max}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VuInk3)
                 }
                 Text(
-                    if (card.ready) "Canjea tu ${card.reward.lowercase()}"
-                    else "A $left ${if (left > 1) "sellos" else "sello"} de tu ${card.reward.lowercase()}",
+                    // The comercio does not configure a reward yet, so we stay generic instead of
+                    // naming a prize the tag never promised.
+                    if (card.ready) "Canjea tu recompensa"
+                    else "A $left ${if (left > 1) "sellos" else "sello"} de tu recompensa",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
                     color = VuInk2,

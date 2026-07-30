@@ -58,10 +58,23 @@ class VuelvoRepository @Inject constructor(
     /**
      * Applies a stamp from a scanned tag / deep link. Creates the card if it is unknown,
      * otherwise adds a stamp to the existing one.
+     *
+     * An existing card also refreshes the tag-owned fields from the payload, so a comercio that
+     * re-writes its tag (new name, new reward, new logo/cover) reaches customers who already hold
+     * the card. Images are only overwritten when the tag actually carries one: older tags predate
+     * `logo=`/`cover=`, and scanning one of those must not wipe the logo a newer tag installed.
+     * Stamp count is card state, not tag state, so it is never touched here.
      */
     suspend fun applyStamp(payload: StampPayload): ScanResult {
         val existing = cardDao.findById(payload.id)
-        val card = existing ?: StampCardEntity(
+        val card = existing?.copy(
+            name = payload.name,
+            maxStamps = payload.max,
+            reward = payload.reward,
+            uuid = payload.uuid ?: existing.uuid,
+            logoRef = payload.logoRef ?: existing.logoRef,
+            coverRef = payload.coverRef ?: existing.coverRef,
+        ) ?: StampCardEntity(
             id = payload.id,
             name = payload.name,
             category = "Comercio",
