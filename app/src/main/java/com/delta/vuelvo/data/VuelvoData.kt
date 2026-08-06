@@ -71,8 +71,4 @@ object VuelvoData {
         Reward("reward-cafe-1", "cafe-nostrum", "Café gratis", "Cafè Nostrum", CommerceIcon.COFFEE, Color(0xFFF3E9DF), Color(0xFF9A6A43), RewardStatus.REDEEMED, "12 may"),
         Reward("reward-melic-1", "studio-melic", "Corte de pelo gratis", "Studio Mèlic", CommerceIcon.SCISSORS, Color(0xFFE9EDF1), Color(0xFF5C6B7B), RewardStatus.REDEEMED, "3 abr"),
     )
-
-    /** Hardcoded tag used as a fallback when the device has no NFC adapter (e.g. emulator). */
-    const val FALLBACK_TAG_URI =
-        "vuelvo://stamp?id=cafe-nostrum&name=Caf%C3%A8%20Nostrum&max=10&reward=Caf%C3%A9%20gratis"
 }

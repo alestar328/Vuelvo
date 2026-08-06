@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+   Reglas de copia de seguridad para API 31+.
+
+   Las tarjetas sólo existen en vuelvo.db de este dispositivo, así que se respaldan tanto en la
+   nube (restaurar tras reinstalar o cambiar de móvil) como en la transferencia directa entre
+   dispositivos. No hay <include> a propósito: sin él entra todo por defecto.
+
+   Se excluyen los ficheros auxiliares del modo WAL de SQLite: copiarlos junto al .db puede
+   restaurar una base de datos inconsistente, y sin ellos se restaura el .db ya consolidado.
+   Ver https://developer.android.com/about/versions/12/backup-restore#xml-changes
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="database" path="vuelvo.db-wal" />
+        <exclude domain="database" path="vuelvo.db-shm" />
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="database" path="vuelvo.db-wal" />
+        <exclude domain="database" path="vuelvo.db-shm" />
     </device-transfer>
-    -->
 </data-extraction-rules>

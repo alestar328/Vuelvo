@@ -55,14 +55,12 @@ import com.delta.vuelvo.ui.viewmodel.AppViewModel
 import com.delta.vuelvo.ui.viewmodel.CardDetailViewModel
 import com.delta.vuelvo.ui.viewmodel.CardsViewModel
 import com.delta.vuelvo.ui.viewmodel.RewardsViewModel
-import com.delta.vuelvo.ui.viewmodel.ScanViewModel
 import com.delta.vuelvo.ui.viewmodel.Tab
 
 @Composable
 fun VuelvoApp(appViewModel: AppViewModel = hiltViewModel()) {
     val cardsViewModel: CardsViewModel = hiltViewModel()
     val rewardsViewModel: RewardsViewModel = hiltViewModel()
-    val scanViewModel: ScanViewModel = hiltViewModel()
 
     val cards by cardsViewModel.cards.collectAsStateWithLifecycle()
     val readyCount by cardsViewModel.readyCount.collectAsStateWithLifecycle()
@@ -87,7 +85,6 @@ fun VuelvoApp(appViewModel: AppViewModel = hiltViewModel()) {
                 bottomInset = contentBottom,
             )
             Tab.SCAN -> ScanScreen(
-                onScan = scanViewModel::simulateScan,
                 pendingScan = appViewModel.pendingExternalScan,
                 onPendingConsumed = { appViewModel.consumeExternalScan() },
                 onReward = { appViewModel.showRewardCelebration(it) },

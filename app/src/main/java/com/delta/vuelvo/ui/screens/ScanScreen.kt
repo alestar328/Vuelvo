@@ -12,8 +12,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,7 +27,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,7 +34,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import com.delta.vuelvo.domain.ScanResult
+import com.delta.vuelvo.ui.components.Header
 import com.delta.vuelvo.ui.components.Stamps
 import com.delta.vuelvo.ui.viewmodel.ExternalScan
 import com.delta.vuelvo.ui.icons.VuelvoIcons
@@ -62,14 +59,13 @@ import com.delta.vuelvo.ui.theme.VuBg
 import com.delta.vuelvo.ui.theme.VuInk
 import com.delta.vuelvo.ui.theme.VuInk2
 import com.delta.vuelvo.ui.theme.VuInk3
+import com.delta.vuelvo.ui.theme.VuScreenGutter
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
-private enum class Phase { IDLE, SCANNING, SUCCESS }
+private enum class Phase { IDLE, SUCCESS }
 
 @Composable
 fun ScanScreen(
-    onScan: suspend () -> ScanResult,
     pendingScan: ExternalScan?,
     onPendingConsumed: () -> Unit,
     onReward: (ScanResult) -> Unit,
@@ -78,7 +74,6 @@ fun ScanScreen(
 ) {
     var phase by remember { mutableStateOf(Phase.IDLE) }
     var result by remember { mutableStateOf<ScanResult?>(null) }
-    val scope = rememberCoroutineScope()
 
     fun resetScan() {
         phase = Phase.IDLE
@@ -86,7 +81,7 @@ fun ScanScreen(
         onPendingConsumed()
     }
 
-    // Show results pushed in from outside (NFC tag / deep link) without the simulated read.
+    // The only source of stamps: results pushed in from outside (NFC tag / deep link).
     LaunchedEffect(pendingScan) {
         val res = pendingScan?.result ?: return@LaunchedEffect
         if (res.gotReward) {
@@ -105,64 +100,21 @@ fun ScanScreen(
         onClose()
     }
 
-    fun tap() {
-        if (phase == Phase.SUCCESS) { resetScan(); return }
-        if (phase != Phase.IDLE) return
-        phase = Phase.SCANNING
-        scope.launch {
-            delay(1300)
-            val res = onScan()
-            if (res.gotReward) {
-                onReward(res)
-                phase = Phase.IDLE
-                result = null
-            } else {
-                result = res
-                phase = Phase.SUCCESS
-                delay(2800)
-                resetScan()
-            }
-        }
-    }
-
     Box(Modifier.fillMaxSize().background(VuBg)) {
         Column(
             Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .padding(start = 24.dp, end = 24.dp, bottom = bottomInset),
+                .padding(start = VuScreenGutter, end = VuScreenGutter, bottom = bottomInset),
         ) {
-            Column(Modifier.padding(top = 20.dp)) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(9.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    com.delta.vuelvo.ui.components.VuelvoMark(26.dp)
-                    Text("Vuelvo", fontSize = 16.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold, letterSpacing = (-0.3).sp, color = VuInk)
-                }
-                Text(
-                    "Escanear",
-                    modifier = Modifier.padding(top = 16.dp),
-                    fontSize = 33.sp,
-                    fontWeight = androidx.compose.ui.text.font.FontWeight.ExtraBold,
-                    letterSpacing = (-0.9).sp,
-                    color = VuInk,
-                )
-            }
+            Header("Escanear")
 
             Column(
                 Modifier.weight(1f).fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
-                Box(
-                    Modifier.clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) { tap() },
-                ) {
-                    NfcTarget(phase)
-                }
+                NfcTarget(phase)
 
                 Column(
                     Modifier.padding(top = 18.dp).widthIn(max = 300.dp),
@@ -204,7 +156,7 @@ fun ScanScreen(
             }
 
             Text(
-                if (phase == Phase.IDLE) "Toca el círculo para simular el escaneo" else " ",
+                if (phase == Phase.IDLE) "Mantén el NFC activado para que la lectura funcione" else " ",
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 12.5.sp,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
@@ -217,20 +169,17 @@ fun ScanScreen(
 
 private fun title(phase: Phase, r: ScanResult?): String = when (phase) {
     Phase.IDLE -> "Listo para escanear"
-    Phase.SCANNING -> "Leyendo tag NFC…"
     Phase.SUCCESS -> if (r != null) "+1 sello · ${r.cardName}" else ""
 }
 
 private fun subtitle(phase: Phase, r: ScanResult?): String = when (phase) {
     Phase.IDLE -> "Acerca la parte superior de tu teléfono al tag NFC del comercio para sumar un sello."
-    Phase.SCANNING -> "Mantén el teléfono cerca del tag."
     Phase.SUCCESS -> if (r != null) "Llevas ${r.newCount} de ${r.max} sellos." else ""
 }
 
 @Composable
 private fun NfcTarget(phase: Phase) {
     val done = phase == Phase.SUCCESS
-    val reading = phase == Phase.SCANNING
 
     // idle floating
     val floatT = rememberInfiniteTransition(label = "float")
@@ -262,12 +211,6 @@ private fun NfcTarget(phase: Phase) {
             contentAlignment = Alignment.Center,
         ) {
             when {
-                reading -> CircularProgressIndicator(
-                    Modifier.size(52.dp),
-                    color = VuAccent,
-                    strokeWidth = 4.dp,
-                    trackColor = VuAccentSoft,
-                )
                 done -> {
                     val s = remember { Animatable(0f) }
                     LaunchedEffect(Unit) {
