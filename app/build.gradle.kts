@@ -26,9 +26,9 @@ android {
         targetSdk = 36
         // ⬆️ SUBIR EN CADA VERSIÓN QUE SUBAS A PLAY (pruebas/producción):
         // versionCode: entero, +1 cada subida (Play rechaza repetir el mismo número). Ej: 1 → 2 → 3...
-        versionCode = 2
+        versionCode = 3
         // versionName: texto visible para el usuario. Súbelo cuando haya cambios relevantes. Ej: "1.0" → "1.1"
-        versionName = "1.1"
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -66,6 +66,12 @@ android {
         compose = true
         buildConfig = true
     }
+}
+
+// Room vuelca el esquema de cada versión en app/schemas/ (versionado en git) para poder escribir
+// y testear las migraciones contra el esquema real. Ver VuelvoDatabase y Migrations.kt.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
 }
 
 dependencies {

@@ -2,15 +2,20 @@ package com.delta.vuelvo.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.delta.vuelvo.data.local.entity.StampCardEntity
 import com.delta.vuelvo.data.local.entity.VuelvoRewardEntity
 
+/**
+ * Al subir [version] hay que añadir su `Migration` en [VUELVO_MIGRATIONS]: la base de datos es la
+ * única copia de las tarjetas del usuario y ya no se borra sola al actualizar la app.
+ *
+ * `exportSchema = true` deja el esquema versionado en `app/schemas/` para poder escribir y probar
+ * esas migraciones contra el esquema real en lugar de a ojo.
+ */
 @Database(
     entities = [StampCardEntity::class, VuelvoRewardEntity::class],
     version = 5,
-    exportSchema = false,
+    exportSchema = true,
 )
 abstract class VuelvoDatabase : RoomDatabase() {
     abstract fun stampCardDao(): StampCardDao
@@ -18,12 +23,5 @@ abstract class VuelvoDatabase : RoomDatabase() {
 
     companion object {
         const val NAME = "vuelvo.db"
-
-        /** Adds the nullable `businessCode` column — no existing row loses data. */
-        val MIGRATION_4_5 = object : Migration(4, 5) {
-            override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("ALTER TABLE stamp_cards ADD COLUMN businessCode TEXT")
-            }
-        }
     }
 }

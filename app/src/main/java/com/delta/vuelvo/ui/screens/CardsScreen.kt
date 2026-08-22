@@ -6,11 +6,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +51,7 @@ import com.delta.vuelvo.ui.theme.VuCard
 import com.delta.vuelvo.ui.theme.VuInk
 import com.delta.vuelvo.ui.theme.VuInk2
 import com.delta.vuelvo.ui.theme.VuInk3
+import com.delta.vuelvo.ui.theme.VuScreenGutter
 import androidx.compose.ui.graphics.Color
 
 @Composable
@@ -61,7 +65,11 @@ fun CardsScreen(
     val subtitle = "${cards.size} comercios · $readyCount ${if (readyCount != 1) "recompensas listas" else "recompensa lista"}"
     LazyColumn(
         modifier = Modifier.fillMaxSize().background(VuBg),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottomInset),
+        // El inset del status bar va en contentPadding (no en el modifier) para que la
+        // lista pueda scrollear por debajo de la barra sin que la cabecera quede tapada.
+        contentPadding = WindowInsets.statusBars
+            .add(WindowInsets(left = VuScreenGutter, right = VuScreenGutter, bottom = bottomInset))
+            .asPaddingValues(),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         item { Header("Tarjetas", subtitle) }
