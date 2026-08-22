@@ -92,6 +92,12 @@ object VuelvoIcons {
             "M9 13h6",
         )
     }
+    val Store by lazy {
+        strokeIcon(
+            "M4 9.5 5.4 5h13.2L20 9.5M4 9.5h16M4 9.5a2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0 2 2 0 0 0 4 0",
+            "M5 11v8.5h14V11M9.5 19.5v-4.5h5v4.5",
+        )
+    }
 
     // UI icons
     val StampCard by lazy {

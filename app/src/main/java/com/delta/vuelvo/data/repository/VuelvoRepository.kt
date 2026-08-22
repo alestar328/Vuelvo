@@ -60,27 +60,40 @@ class VuelvoRepository @Inject constructor(
      * otherwise adds a stamp to the existing one.
      *
      * An existing card also refreshes the tag-owned fields from the payload, so a comercio that
-     * re-writes its tag (new name, new reward, new logo/cover) reaches customers who already hold
-     * the card. Images are only overwritten when the tag actually carries one: older tags predate
-     * `logo=`/`cover=`, and scanning one of those must not wipe the logo a newer tag installed.
-     * Stamp count is card state, not tag state, so it is never touched here.
+     * re-writes its tag (new name, new category, new colours, new reward, new logo/cover) reaches
+     * customers who already hold the card. Stamp count is card state, not tag state, so it is never
+     * touched here.
+     *
+     * Missing fields mean two different things depending on how old the tag is. A tag written by the
+     * current comercio app always carries `cat=`/`sym=`/`tile=`/`ink=` and carries `logo=`/`cover=`
+     * whenever the comercio set an image, so a missing `cover=` there is a deliberate removal and the
+     * old image has to go — otherwise a comercio that swaps its photo for a colour keeps showing the
+     * photo forever. Older tags predate all of those params, so on those a missing field is simply
+     * unknown and whatever the card already has is kept.
      */
     suspend fun applyStamp(payload: StampPayload): ScanResult {
         val existing = cardDao.findById(payload.id)
+        // `tile=` only exists on tags written by the current comercio app, so it doubles as the
+        // "this payload describes the card's looks in full" marker.
+        val describesLooks = payload.tileHex != null
         val card = existing?.copy(
             name = payload.name,
+            category = payload.category ?: existing.category,
+            symbolName = payload.icon?.name ?: existing.symbolName,
+            tileHex = payload.tileHex ?: existing.tileHex,
+            inkHex = payload.inkHex ?: existing.inkHex,
             maxStamps = payload.max,
             reward = payload.reward,
             uuid = payload.uuid ?: existing.uuid,
-            logoRef = payload.logoRef ?: existing.logoRef,
-            coverRef = payload.coverRef ?: existing.coverRef,
+            logoRef = payload.logoRef ?: existing.logoRef.takeUnless { describesLooks },
+            coverRef = payload.coverRef ?: existing.coverRef.takeUnless { describesLooks },
         ) ?: StampCardEntity(
             id = payload.id,
             name = payload.name,
-            category = "Comercio",
-            symbolName = com.delta.vuelvo.data.CommerceIcon.COFFEE.name,
-            tileHex = "#EDE7FB",
-            inkHex = "#7B3CE6",
+            category = payload.category ?: DEFAULT_CATEGORY,
+            symbolName = (payload.icon ?: com.delta.vuelvo.data.CommerceIcon.COFFEE).name,
+            tileHex = payload.tileHex ?: DEFAULT_TILE,
+            inkHex = payload.inkHex ?: DEFAULT_INK,
             stamps = 0,
             maxStamps = payload.max,
             reward = payload.reward,
@@ -151,5 +164,10 @@ class VuelvoRepository @Inject constructor(
     private companion object {
         const val PREFS = "vuelvo.prefs"
         const val KEY_SEEDED = "vuelvo.seedInserted"
+
+        /** Fallbacks for tags written before `cat=`/`tile=`/`ink=` existed. */
+        const val DEFAULT_CATEGORY = "Comercio"
+        const val DEFAULT_TILE = "#EDE7FB"
+        const val DEFAULT_INK = "#7B3CE6"
     }
 }

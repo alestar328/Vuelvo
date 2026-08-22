@@ -26,9 +26,9 @@ android {
         targetSdk = 36
         // ⬆️ SUBIR EN CADA VERSIÓN QUE SUBAS A PLAY (pruebas/producción):
         // versionCode: entero, +1 cada subida (Play rechaza repetir el mismo número). Ej: 1 → 2 → 3...
-        versionCode = 3
+        versionCode = 4
         // versionName: texto visible para el usuario. Súbelo cuando haya cambios relevantes. Ej: "1.0" → "1.1"
-        versionName = "1.2"
+        versionName = "1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

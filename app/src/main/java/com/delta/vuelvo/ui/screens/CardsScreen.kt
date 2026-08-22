@@ -52,6 +52,7 @@ import com.delta.vuelvo.ui.theme.VuInk
 import com.delta.vuelvo.ui.theme.VuInk2
 import com.delta.vuelvo.ui.theme.VuInk3
 import com.delta.vuelvo.ui.theme.VuScreenGutter
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 
 @Composable
@@ -158,9 +159,14 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
             .shadow(8.dp, RoundedCornerShape(24.dp), spotColor = VuInk)
             .clip(RoundedCornerShape(24.dp)),
     ) {
-        // White card by default; if the comercio set a cover, its photo shows through as a subtle
-        // backdrop (tinted with a white scrim so the existing dark text/icons stay legible untouched).
-        Box(Modifier.matchParentSize().background(VuCard))
+        // Fondo o color, nunca los dos: si el comercio subió una foto de fondo manda la foto
+        // (atenuada con un velo blanco para que el texto e iconos oscuros sigan legibles); si no,
+        // manda el color que eligió, degradado hacia el blanco de la tarjeta.
+        Box(
+            Modifier.matchParentSize().background(
+                Brush.linearGradient(listOf(card.tile, VuCard)),
+            ),
+        )
         if (card.coverUrl != null) {
             AsyncImage(
                 model = card.coverUrl,
@@ -186,8 +192,11 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
                     card = card,
                     size = 46.dp,
                     symbolSize = 24.dp,
+                    // El tile ya tiñe el fondo de la tarjeta: el cuadro del logo va en blanco para
+                    // que el símbolo no se pierda sobre su propio color (igual que en la vista
+                    // previa del comercio).
                     shape = RoundedCornerShape(14.dp),
-                    background = card.tile,
+                    background = VuCard,
                 )
                 Column(Modifier.weight(1f)) {
                     Text(card.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp, color = VuInk)

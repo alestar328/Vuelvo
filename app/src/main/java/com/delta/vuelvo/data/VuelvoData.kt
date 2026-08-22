@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.delta.vuelvo.ui.icons.VuelvoIcons
 
-enum class CommerceIcon { COFFEE, BREAD, SCISSORS, FORK, ICECREAM }
+enum class CommerceIcon { COFFEE, BREAD, SCISSORS, FORK, ICECREAM, STORE }
 
 val CommerceIcon.vector: ImageVector
     get() = when (this) {
@@ -13,6 +13,7 @@ val CommerceIcon.vector: ImageVector
         CommerceIcon.SCISSORS -> VuelvoIcons.Scissors
         CommerceIcon.FORK -> VuelvoIcons.Fork
         CommerceIcon.ICECREAM -> VuelvoIcons.IceCream
+        CommerceIcon.STORE -> VuelvoIcons.Store
     }
 
 data class StampCard(
