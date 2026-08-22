@@ -2,7 +2,7 @@ package com.delta.vuelvo.nfc
 
 import android.net.Uri
 
-/** Parsed payload of a `vuelvo://stamp?uuid=…&id=…&name=…&max=…&reward=…&logo=…&cover=…` URI. */
+/** Parsed payload of a `vuelvo://stamp?code=…&id=…&name=…&max=…&reward=…&logo=…&cover=…` URI. */
 data class StampPayload(
     val id: String,
     val name: String,
@@ -10,6 +10,9 @@ data class StampPayload(
     val reward: String,
     /** Per-tag unique identifier carried by the deep link; null on older tags that omit it. */
     val uuid: String? = null,
+    /** Merchant's businessCode — key of its `businesses/{code}` Firestore record; null on tags written
+     * before this field existed. Drives the active-comercio check, see [com.delta.vuelvo.data.BusinessStatusChecker]. */
+    val code: String? = null,
     /** Firebase Storage object reference for the logo/cover (e.g. "ABCDE12345_logo", no extension) —
      * null when the comercio didn't set one. See [com.delta.vuelvo.data.VuelvoStorage] for the resolved URL. */
     val logoRef: String? = null,
@@ -37,10 +40,11 @@ object VuelvoUri {
         val max = uri.getQueryParameter("max")?.toIntOrNull()?.takeIf { it > 0 } ?: DEFAULT_MAX
         val reward = uri.getQueryParameter("reward")?.takeIf { it.isNotBlank() } ?: "Recompensa"
         val uuid = uri.getQueryParameter("uuid")?.takeIf { it.isNotBlank() }
+        val code = uri.getQueryParameter("code")?.takeIf { it.isNotBlank() }
         val logoRef = uri.getQueryParameter("logo")?.takeIf { it.isNotBlank() }
         val coverRef = uri.getQueryParameter("cover")?.takeIf { it.isNotBlank() }
         return StampPayload(
-            id = id, name = name, max = max, reward = reward, uuid = uuid,
+            id = id, name = name, max = max, reward = reward, uuid = uuid, code = code,
             logoRef = logoRef, coverRef = coverRef,
         )
     }

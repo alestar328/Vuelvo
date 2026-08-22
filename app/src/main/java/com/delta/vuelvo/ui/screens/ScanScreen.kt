@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import com.delta.vuelvo.domain.ScanResult
+import com.delta.vuelvo.domain.StampOutcome
 import com.delta.vuelvo.ui.components.Stamps
 import com.delta.vuelvo.ui.viewmodel.ExternalScan
 import com.delta.vuelvo.ui.icons.VuelvoIcons
@@ -65,11 +66,11 @@ import com.delta.vuelvo.ui.theme.VuInk3
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-private enum class Phase { IDLE, SCANNING, SUCCESS }
+private enum class Phase { IDLE, SCANNING, SUCCESS, BLOCKED }
 
 @Composable
 fun ScanScreen(
-    onScan: suspend () -> ScanResult,
+    onScan: suspend () -> StampOutcome,
     pendingScan: ExternalScan?,
     onPendingConsumed: () -> Unit,
     onReward: (ScanResult) -> Unit,
@@ -88,7 +89,12 @@ fun ScanScreen(
 
     // Show results pushed in from outside (NFC tag / deep link) without the simulated read.
     LaunchedEffect(pendingScan) {
-        val res = pendingScan?.result ?: return@LaunchedEffect
+        val outcome = pendingScan?.outcome ?: return@LaunchedEffect
+        if (outcome is StampOutcome.Blocked) {
+            phase = Phase.BLOCKED
+            return@LaunchedEffect
+        }
+        val res = (outcome as StampOutcome.Applied).result
         if (res.gotReward) {
             // Completing a card hands off to the full-screen celebration above the tab bar.
             onReward(res)
@@ -106,12 +112,17 @@ fun ScanScreen(
     }
 
     fun tap() {
-        if (phase == Phase.SUCCESS) { resetScan(); return }
+        if (phase == Phase.SUCCESS || phase == Phase.BLOCKED) { resetScan(); return }
         if (phase != Phase.IDLE) return
         phase = Phase.SCANNING
         scope.launch {
             delay(1300)
-            val res = onScan()
+            val outcome = onScan()
+            if (outcome is StampOutcome.Blocked) {
+                phase = Phase.BLOCKED
+                return@launch
+            }
+            val res = (outcome as StampOutcome.Applied).result
             if (res.gotReward) {
                 onReward(res)
                 phase = Phase.IDLE
@@ -204,7 +215,11 @@ fun ScanScreen(
             }
 
             Text(
-                if (phase == Phase.IDLE) "Toca el círculo para simular el escaneo" else " ",
+                when (phase) {
+                    Phase.IDLE -> "Toca el círculo para simular el escaneo"
+                    Phase.BLOCKED -> "Toca el círculo para volver a intentarlo"
+                    else -> " "
+                },
                 modifier = Modifier.fillMaxWidth(),
                 fontSize = 12.5.sp,
                 fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold,
@@ -219,17 +234,20 @@ private fun title(phase: Phase, r: ScanResult?): String = when (phase) {
     Phase.IDLE -> "Listo para escanear"
     Phase.SCANNING -> "Leyendo tag NFC…"
     Phase.SUCCESS -> if (r != null) "+1 sello · ${r.cardName}" else ""
+    Phase.BLOCKED -> "Comercio no disponible"
 }
 
 private fun subtitle(phase: Phase, r: ScanResult?): String = when (phase) {
     Phase.IDLE -> "Acerca la parte superior de tu teléfono al tag NFC del comercio para sumar un sello."
     Phase.SCANNING -> "Mantén el teléfono cerca del tag."
     Phase.SUCCESS -> if (r != null) "Llevas ${r.newCount} de ${r.max} sellos." else ""
+    Phase.BLOCKED -> "Este comercio no está disponible ahora mismo."
 }
 
 @Composable
 private fun NfcTarget(phase: Phase) {
     val done = phase == Phase.SUCCESS
+    val blocked = phase == Phase.BLOCKED
     val reading = phase == Phase.SCANNING
 
     // idle floating
@@ -248,7 +266,7 @@ private fun NfcTarget(phase: Phase) {
         // static halo
         Box(
             Modifier.size(188.dp).clip(CircleShape)
-                .background(if (done) Color.Transparent else VuAccentSoft),
+                .background(if (done || blocked) Color.Transparent else VuAccentSoft),
         )
         // core disc
         Box(
@@ -256,8 +274,11 @@ private fun NfcTarget(phase: Phase) {
                 .size(132.dp)
                 .clip(CircleShape)
                 .background(
-                    if (done) Brush.linearGradient(listOf(VuAccentLight, VuAccent, VuAccentDeep))
-                    else Brush.linearGradient(listOf(Color.White, Color(0xFFF3EEFE))),
+                    when {
+                        done -> Brush.linearGradient(listOf(VuAccentLight, VuAccent, VuAccentDeep))
+                        blocked -> Brush.linearGradient(listOf(VuInk3, VuInk2))
+                        else -> Brush.linearGradient(listOf(Color.White, Color(0xFFF3EEFE)))
+                    },
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -275,6 +296,7 @@ private fun NfcTarget(phase: Phase) {
                     }
                     Icon(VuelvoIcons.Check, null, Modifier.size(62.dp).scale(s.value), tint = Color.White)
                 }
+                blocked -> Icon(VuelvoIcons.Close, null, Modifier.size(56.dp), tint = Color.White)
                 else -> Icon(VuelvoIcons.Nfc, null, Modifier.size(62.dp), tint = VuAccent)
             }
         }

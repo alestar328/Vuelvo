@@ -20,6 +20,7 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): VuelvoDatabase =
         Room.databaseBuilder(context, VuelvoDatabase::class.java, VuelvoDatabase.NAME)
+            .addMigrations(VuelvoDatabase.MIGRATION_4_5)
             .fallbackToDestructiveMigration()
             .build()
 

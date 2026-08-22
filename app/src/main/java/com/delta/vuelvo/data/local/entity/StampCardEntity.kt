@@ -21,6 +21,11 @@ data class StampCardEntity(
     val reward: String,
     /** Per-tag unique identifier from the scanned deep link; null for cards created before it existed. */
     val uuid: String? = null,
+    /** Merchant's `businessCode` — key of its `businesses/{code}` Firestore record (see
+     * [com.delta.vuelvo.data.BusinessStatusChecker]) and, since it superseded [id] as the primary match
+     * key for an existing card, the field a rescan matches on first. Null for cards created before this
+     * existed, or from a tag that still doesn't carry one. */
+    val businessCode: String? = null,
     /** Firebase Storage object references for the logo/cover (see [com.delta.vuelvo.data.VuelvoStorage]);
      * null for cards created before this existed or whose tag didn't set one. */
     val logoRef: String? = null,
