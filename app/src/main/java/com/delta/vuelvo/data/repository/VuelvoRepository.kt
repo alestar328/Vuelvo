@@ -63,13 +63,14 @@ class VuelvoRepository @Inject constructor(
      * identifiers the tag carries — `businessCode` and `uuid` have superseded `id` (the business
      * name slug) as the identity that matters, since a rename changes `id` but not those:
      *
-     * 1. Tag carries `code`: match by `businessCode` first; if no card has that code yet, fall back
-     *    to matching by `uuid` (an existing card from before the comercio had a code) and **migrate**
-     *    it — the refreshed row picks up `businessCode` so future scans match on `code` directly.
-     *    No match at all means a comercio this client has never seen. Either way, once `code` is on
-     *    the table, [BusinessStatusChecker] must confirm the comercio is active before a stamp is
-     *    added or a new card created — an explicit `active: false` blocks it (fail-closed); a
-     *    missing/unreachable record does not (fail-open).
+     * 1. Tag carries `code`: match by `businessCode` alone — **no fallback to `uuid`**. `uuid`
+     *    identifies an install, not a business, and `businessCode` is manual precisely so one comercio
+     *    phone can write tags for several different businesses; falling back to `uuid` here would merge
+     *    them into a single card the moment a second business's tag came from the same phone (this was
+     *    a real bug — see git history). No match at all means a comercio this client has never seen.
+     *    Either way, once `code` is on the table, [BusinessStatusChecker] must confirm the comercio is
+     *    active before a stamp is added or a new card created — an explicit `active: false` blocks it
+     *    (fail-closed); a missing/unreachable record does not (fail-open).
      * 2. Tag carries no `code` but does carry `uuid`: match/create by `uuid`, no active check — there
      *    is nothing to check yet, this predates the comercio having a code at all.
      * 3. Tag carries neither: oldest possible shape, falls back to the original match-by-`id`
@@ -88,7 +89,10 @@ class VuelvoRepository @Inject constructor(
         val uuid = payload.uuid?.takeIf { it.isNotBlank() }
 
         if (code != null) {
-            val existing = cardDao.findByBusinessCode(code) ?: uuid?.let { cardDao.findByUuid(it) }
+            // code alone decides identity here — do NOT fall back to matching by uuid. uuid identifies
+            // an install, not a business, and one comercio phone can (and during testing, will) write
+            // tags for several different businesses; a uuid fallback would merge them into one card.
+            val existing = cardDao.findByBusinessCode(code)
             if (!BusinessStatusChecker.isAvailable(code)) return StampOutcome.Blocked
 
             val card = existing?.copy(
