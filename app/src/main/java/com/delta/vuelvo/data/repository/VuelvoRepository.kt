@@ -2,6 +2,7 @@ package com.delta.vuelvo.data.repository
 
 import android.content.Context
 import com.delta.vuelvo.BuildConfig
+import com.delta.vuelvo.data.BusinessStatusChecker
 import com.delta.vuelvo.data.Reward
 import com.delta.vuelvo.data.StampCard
 import com.delta.vuelvo.data.VuelvoData
@@ -13,6 +14,7 @@ import com.delta.vuelvo.data.mapper.toCommerceIcon
 import com.delta.vuelvo.data.mapper.toEntity
 import com.delta.vuelvo.data.mapper.toUi
 import com.delta.vuelvo.domain.ScanResult
+import com.delta.vuelvo.domain.StampOutcome
 import com.delta.vuelvo.nfc.StampPayload
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
@@ -56,53 +58,90 @@ class VuelvoRepository @Inject constructor(
     }
 
     /**
-     * Applies a stamp from a scanned tag / deep link. Creates the card if it is unknown,
-     * otherwise adds a stamp to the existing one.
+     * Applies a stamp from a scanned tag / deep link. Which existing card (if any) this payload
+     * belongs to, and whether the comercio's `active` state needs checking first, depends on what
+     * identifiers the tag carries — `businessCode` and `uuid` have superseded `id` (the business
+     * name slug) as the identity that matters, since a rename changes `id` but not those:
+     *
+     * 1. Tag carries `code`: match by `businessCode` first; if no card has that code yet, fall back
+     *    to matching by `uuid` (an existing card from before the comercio had a code) and **migrate**
+     *    it — the refreshed row picks up `businessCode` so future scans match on `code` directly.
+     *    No match at all means a comercio this client has never seen. Either way, once `code` is on
+     *    the table, [BusinessStatusChecker] must confirm the comercio is active before a stamp is
+     *    added or a new card created — an explicit `active: false` blocks it (fail-closed); a
+     *    missing/unreachable record does not (fail-open).
+     * 2. Tag carries no `code` but does carry `uuid`: match/create by `uuid`, no active check — there
+     *    is nothing to check yet, this predates the comercio having a code at all.
+     * 3. Tag carries neither: oldest possible shape, falls back to the original match-by-`id`
+     *    behavior with no check, so a truly ancient tag isn't broken by any of the above.
      *
      * An existing card also refreshes the tag-owned fields from the payload, so a comercio that
-     * re-writes its tag (new name, new category, new colours, new reward, new logo/cover) reaches
-     * customers who already hold the card. Stamp count is card state, not tag state, so it is never
-     * touched here.
-     *
-     * Missing fields mean two different things depending on how old the tag is. A tag written by the
-     * current comercio app always carries `cat=`/`sym=`/`tile=`/`ink=` and carries `logo=`/`cover=`
-     * whenever the comercio set an image, so a missing `cover=` there is a deliberate removal and the
-     * old image has to go — otherwise a comercio that swaps its photo for a colour keeps showing the
-     * photo forever. Older tags predate all of those params, so on those a missing field is simply
-     * unknown and whatever the card already has is kept.
+     * re-writes its tag (new name, new reward, new logo/cover) reaches customers who already hold
+     * the card. Images are only overwritten when the tag actually carries one: older tags predate
+     * `logo=`/`cover=`, and scanning one of those must not wipe the logo a newer tag installed.
+     * Stamp count is card state, not tag state, so it is never touched here. The row's `id` (Room
+     * primary key) is never changed once created, even if a later scan's `payload.id` differs (e.g.
+     * the comercio renamed) — identity now lives in `businessCode`/`uuid`, `id` is legacy plumbing.
      */
-    suspend fun applyStamp(payload: StampPayload): ScanResult {
+    suspend fun applyStamp(payload: StampPayload): StampOutcome {
+        val code = payload.code?.takeIf { it.isNotBlank() }
+        val uuid = payload.uuid?.takeIf { it.isNotBlank() }
+
+        if (code != null) {
+            val existing = cardDao.findByBusinessCode(code) ?: uuid?.let { cardDao.findByUuid(it) }
+            if (!BusinessStatusChecker.isAvailable(code)) return StampOutcome.Blocked
+
+            val card = existing?.copy(
+                name = payload.name,
+                maxStamps = payload.max,
+                reward = payload.reward,
+                uuid = uuid ?: existing.uuid,
+                businessCode = code,
+                logoRef = payload.logoRef ?: existing.logoRef,
+                coverRef = payload.coverRef ?: existing.coverRef,
+            ) ?: newCard(payload, uuid = uuid, businessCode = code)
+            return StampOutcome.Applied(addStamp(card))
+        }
+
+        if (uuid != null) {
+            val existing = cardDao.findByUuid(uuid)
+            val card = existing?.copy(
+                name = payload.name,
+                maxStamps = payload.max,
+                reward = payload.reward,
+                uuid = uuid,
+                logoRef = payload.logoRef ?: existing.logoRef,
+                coverRef = payload.coverRef ?: existing.coverRef,
+            ) ?: newCard(payload, uuid = uuid, businessCode = null)
+            return StampOutcome.Applied(addStamp(card))
+        }
+
         val existing = cardDao.findById(payload.id)
-        // `tile=` only exists on tags written by the current comercio app, so it doubles as the
-        // "this payload describes the card's looks in full" marker.
-        val describesLooks = payload.tileHex != null
         val card = existing?.copy(
             name = payload.name,
-            category = payload.category ?: existing.category,
-            symbolName = payload.icon?.name ?: existing.symbolName,
-            tileHex = payload.tileHex ?: existing.tileHex,
-            inkHex = payload.inkHex ?: existing.inkHex,
             maxStamps = payload.max,
             reward = payload.reward,
-            uuid = payload.uuid ?: existing.uuid,
-            logoRef = payload.logoRef ?: existing.logoRef.takeUnless { describesLooks },
-            coverRef = payload.coverRef ?: existing.coverRef.takeUnless { describesLooks },
-        ) ?: StampCardEntity(
-            id = payload.id,
-            name = payload.name,
-            category = payload.category ?: DEFAULT_CATEGORY,
-            symbolName = (payload.icon ?: com.delta.vuelvo.data.CommerceIcon.COFFEE).name,
-            tileHex = payload.tileHex ?: DEFAULT_TILE,
-            inkHex = payload.inkHex ?: DEFAULT_INK,
-            stamps = 0,
-            maxStamps = payload.max,
-            reward = payload.reward,
-            uuid = payload.uuid,
-            logoRef = payload.logoRef,
-            coverRef = payload.coverRef,
-        )
-        return addStamp(card)
+            logoRef = payload.logoRef ?: existing.logoRef,
+            coverRef = payload.coverRef ?: existing.coverRef,
+        ) ?: newCard(payload, uuid = null, businessCode = null)
+        return StampOutcome.Applied(addStamp(card))
     }
+
+    private fun newCard(payload: StampPayload, uuid: String?, businessCode: String?) = StampCardEntity(
+        id = payload.id,
+        name = payload.name,
+        category = "Comercio",
+        symbolName = com.delta.vuelvo.data.CommerceIcon.COFFEE.name,
+        tileHex = "#EDE7FB",
+        inkHex = "#7B3CE6",
+        stamps = 0,
+        maxStamps = payload.max,
+        reward = payload.reward,
+        uuid = uuid,
+        businessCode = businessCode,
+        logoRef = payload.logoRef,
+        coverRef = payload.coverRef,
+    )
 
     /** Increments a card; on reaching [StampCardEntity.maxStamps] mints a reward and resets. */
     suspend fun addStamp(card: StampCardEntity): ScanResult {
@@ -164,10 +203,5 @@ class VuelvoRepository @Inject constructor(
     private companion object {
         const val PREFS = "vuelvo.prefs"
         const val KEY_SEEDED = "vuelvo.seedInserted"
-
-        /** Fallbacks for tags written before `cat=`/`tile=`/`ink=` existed. */
-        const val DEFAULT_CATEGORY = "Comercio"
-        const val DEFAULT_TILE = "#EDE7FB"
-        const val DEFAULT_INK = "#7B3CE6"
     }
 }

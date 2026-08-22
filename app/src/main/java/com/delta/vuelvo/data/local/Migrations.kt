@@ -33,9 +33,18 @@ internal val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+internal val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // StampCardEntity.businessCode — clave del registro "comercio activo" en Firestore; sustituye
+        // a id como clave principal de matching al escanear (ver VuelvoRepository.applyStamp).
+        db.execSQL("ALTER TABLE `stamp_cards` ADD COLUMN `businessCode` TEXT")
+    }
+}
+
 /** Todas las migraciones conocidas, en orden. Añade la nueva aquí al subir `version`. */
 internal val VUELVO_MIGRATIONS = arrayOf(
     MIGRATION_1_2,
     MIGRATION_2_3,
     MIGRATION_3_4,
+    MIGRATION_4_5,
 )

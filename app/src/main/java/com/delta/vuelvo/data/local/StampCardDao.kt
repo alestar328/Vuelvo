@@ -20,6 +20,12 @@ interface StampCardDao {
     @Query("SELECT * FROM stamp_cards WHERE id = :id")
     suspend fun findById(id: String): StampCardEntity?
 
+    @Query("SELECT * FROM stamp_cards WHERE businessCode = :code LIMIT 1")
+    suspend fun findByBusinessCode(code: String): StampCardEntity?
+
+    @Query("SELECT * FROM stamp_cards WHERE uuid = :uuid LIMIT 1")
+    suspend fun findByUuid(uuid: String): StampCardEntity?
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(cards: List<StampCardEntity>)
 

@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.delta.vuelvo.data.Reward
 import com.delta.vuelvo.data.repository.VuelvoRepository
 import com.delta.vuelvo.domain.ScanResult
+import com.delta.vuelvo.domain.StampOutcome
 import com.delta.vuelvo.nfc.StampPayload
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -16,7 +17,7 @@ import javax.inject.Inject
 enum class Tab { CARDS, SCAN, REWARDS }
 
 /** A scan pushed in from NFC / deep link. [id] makes each event distinct so the UI replays it. */
-data class ExternalScan(val id: Long, val result: ScanResult)
+data class ExternalScan(val id: Long, val outcome: StampOutcome)
 
 /**
  * Activity-scoped coordinator: owns navigation/dialog state and bridges externally
@@ -64,11 +65,11 @@ class AppViewModel @Inject constructor(
         lastStampId = payload.id
         lastStampAt = now
         viewModelScope.launch {
-            val result = repository.applyStamp(payload)
+            val outcome = repository.applyStamp(payload)
             openCardId = null
             redeemReward = null
             tab = Tab.SCAN
-            pendingExternalScan = ExternalScan(scanCounter++, result)
+            pendingExternalScan = ExternalScan(scanCounter++, outcome)
         }
     }
 

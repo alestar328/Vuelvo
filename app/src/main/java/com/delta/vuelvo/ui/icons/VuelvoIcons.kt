@@ -132,6 +132,7 @@ object VuelvoIcons {
         )
     }
     val Check by lazy { strokeIcon("M4.5 12.5 9.5 17.5 19.5 6.5") }
+    val Close by lazy { strokeIcon("M6 6l12 12M18 6L6 18") }
     val Chevron by lazy { strokeIcon("M9 5l7 7-7 7") }
     val ChevronLeft by lazy { strokeIcon("M15 5l-7 7 7 7") }
     val Sparkle by lazy {
