@@ -77,9 +77,10 @@ class VuelvoRepository @Inject constructor(
      *    behavior with no check, so a truly ancient tag isn't broken by any of the above.
      *
      * An existing card also refreshes the tag-owned fields from the payload, so a comercio that
-     * re-writes its tag (new name, new reward, new logo/cover) reaches customers who already hold
-     * the card. Images are only overwritten when the tag actually carries one: older tags predate
-     * `logo=`/`cover=`, and scanning one of those must not wipe the logo a newer tag installed.
+     * re-writes its tag (new name, new category, new reward, new logo/cover) reaches customers who
+     * already hold the card. Category and images are only overwritten when the tag actually carries
+     * them: older tags predate `cat=`/`logo=`/`cover=`, and scanning one of those must not wipe what
+     * a newer tag installed.
      * Stamp count is card state, not tag state, so it is never touched here. The row's `id` (Room
      * primary key) is never changed once created, even if a later scan's `payload.id` differs (e.g.
      * the comercio renamed) — identity now lives in `businessCode`/`uuid`, `id` is legacy plumbing.
@@ -97,12 +98,15 @@ class VuelvoRepository @Inject constructor(
 
             val card = existing?.copy(
                 name = payload.name,
+                category = payload.category ?: existing.category,
                 maxStamps = payload.max,
                 reward = payload.reward,
                 uuid = uuid ?: existing.uuid,
                 businessCode = code,
                 logoRef = payload.logoRef ?: existing.logoRef,
                 coverRef = payload.coverRef ?: existing.coverRef,
+                tileHex = payload.tileHex ?: existing.tileHex,
+                inkHex = payload.inkHex ?: existing.inkHex,
             ) ?: newCard(payload, uuid = uuid, businessCode = code)
             return StampOutcome.Applied(addStamp(card))
         }
@@ -111,11 +115,14 @@ class VuelvoRepository @Inject constructor(
             val existing = cardDao.findByUuid(uuid)
             val card = existing?.copy(
                 name = payload.name,
+                category = payload.category ?: existing.category,
                 maxStamps = payload.max,
                 reward = payload.reward,
                 uuid = uuid,
                 logoRef = payload.logoRef ?: existing.logoRef,
                 coverRef = payload.coverRef ?: existing.coverRef,
+                tileHex = payload.tileHex ?: existing.tileHex,
+                inkHex = payload.inkHex ?: existing.inkHex,
             ) ?: newCard(payload, uuid = uuid, businessCode = null)
             return StampOutcome.Applied(addStamp(card))
         }
@@ -123,10 +130,13 @@ class VuelvoRepository @Inject constructor(
         val existing = cardDao.findById(payload.id)
         val card = existing?.copy(
             name = payload.name,
+            category = payload.category ?: existing.category,
             maxStamps = payload.max,
             reward = payload.reward,
             logoRef = payload.logoRef ?: existing.logoRef,
             coverRef = payload.coverRef ?: existing.coverRef,
+            tileHex = payload.tileHex ?: existing.tileHex,
+            inkHex = payload.inkHex ?: existing.inkHex,
         ) ?: newCard(payload, uuid = null, businessCode = null)
         return StampOutcome.Applied(addStamp(card))
     }
@@ -134,10 +144,13 @@ class VuelvoRepository @Inject constructor(
     private fun newCard(payload: StampPayload, uuid: String?, businessCode: String?) = StampCardEntity(
         id = payload.id,
         name = payload.name,
-        category = "Comercio",
+        // Fallback solo para tags viejos, escritos antes de que el deeplink llevara `cat=`.
+        category = payload.category ?: "Comercio",
         symbolName = com.delta.vuelvo.data.CommerceIcon.COFFEE.name,
-        tileHex = "#EDE7FB",
-        inkHex = "#7B3CE6",
+        // Colores del tag; el violeta queda solo para tags viejos, escritos antes de que
+        // el deeplink llevara `tile=`/`ink=`.
+        tileHex = payload.tileHex ?: DEFAULT_TILE_HEX,
+        inkHex = payload.inkHex ?: DEFAULT_INK_HEX,
         stamps = 0,
         maxStamps = payload.max,
         reward = payload.reward,
@@ -207,5 +220,9 @@ class VuelvoRepository @Inject constructor(
     private companion object {
         const val PREFS = "vuelvo.prefs"
         const val KEY_SEEDED = "vuelvo.seedInserted"
+
+        /** Colores de tags viejos, escritos antes de que el deeplink llevara `tile=`/`ink=`. */
+        const val DEFAULT_TILE_HEX = "#EDE7FB"
+        const val DEFAULT_INK_HEX = "#7B3CE6"
     }
 }

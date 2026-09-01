@@ -43,6 +43,7 @@ import com.delta.vuelvo.ui.theme.VuInk
 import com.delta.vuelvo.ui.theme.VuInk2
 import com.delta.vuelvo.ui.theme.VuInk3
 import com.delta.vuelvo.ui.theme.VuStampEmpty
+import com.delta.vuelvo.ui.theme.isDarkSurface
 
 @Composable
 fun CardDetail(card: StampCard, onClose: () -> Unit, onGoScan: () -> Unit) {
@@ -58,6 +59,9 @@ fun CardDetail(card: StampCard, onClose: () -> Unit, onGoScan: () -> Unit) {
     ) {
         // hero
         val hasCover = card.coverUrl != null
+        // El color del comercio puede ser oscuro (Negro): entonces el hero va con tinta blanca,
+        // igual que cuando hay foto de portada.
+        val darkHero = hasCover || card.tile.isDarkSurface()
         Box(
             Modifier
                 .fillMaxWidth()
@@ -78,7 +82,7 @@ fun CardDetail(card: StampCard, onClose: () -> Unit, onGoScan: () -> Unit) {
                         .background(Brush.verticalGradient(listOf(Color.Black.copy(alpha = 0.4f), Color.Black.copy(alpha = 0.1f)))),
                 )
             } else {
-                Box(Modifier.matchParentSize().background(Brush.linearGradient(listOf(card.tile, Color.White))))
+                Box(Modifier.matchParentSize().background(card.tile))
             }
 
             Column(
@@ -107,17 +111,17 @@ fun CardDetail(card: StampCard, onClose: () -> Unit, onGoScan: () -> Unit) {
                         size = 58.dp,
                         symbolSize = 30.dp,
                         shape = RoundedCornerShape(17.dp),
-                        background = Color.White,
+                        background = if (darkHero && !hasCover) Color.White.copy(alpha = 0.14f) else Color.White,
                         elevation = 6.dp,
                     )
                     Column {
                         Text(
                             card.name, fontSize = 24.sp, fontWeight = FontWeight.ExtraBold,
-                            letterSpacing = (-0.5).sp, color = if (hasCover) Color.White else VuInk,
+                            letterSpacing = (-0.5).sp, color = if (darkHero) Color.White else VuInk,
                         )
                         Text(
                             card.category, fontSize = 14.5.sp, fontWeight = FontWeight.SemiBold,
-                            color = if (hasCover) Color.White.copy(alpha = 0.85f) else VuInk2,
+                            color = if (darkHero) Color.White.copy(alpha = 0.85f) else VuInk2,
                         )
                     }
                 }

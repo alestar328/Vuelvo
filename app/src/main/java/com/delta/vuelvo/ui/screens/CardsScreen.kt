@@ -44,6 +44,7 @@ import com.delta.vuelvo.ui.components.CardLogoOrSymbol
 import com.delta.vuelvo.ui.components.Header
 import com.delta.vuelvo.ui.components.Stamps
 import com.delta.vuelvo.ui.icons.VuelvoIcons
+import com.delta.vuelvo.ui.theme.VuAccent
 import com.delta.vuelvo.ui.theme.VuAccentDeep
 import com.delta.vuelvo.ui.theme.VuAccentSoft
 import com.delta.vuelvo.ui.theme.VuBg
@@ -52,8 +53,8 @@ import com.delta.vuelvo.ui.theme.VuInk
 import com.delta.vuelvo.ui.theme.VuInk2
 import com.delta.vuelvo.ui.theme.VuInk3
 import com.delta.vuelvo.ui.theme.VuScreenGutter
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import com.delta.vuelvo.ui.theme.isDarkSurface
 
 @Composable
 fun CardsScreen(
@@ -153,6 +154,12 @@ private val DeleteRed = Color(0xFFE5484D)
 
 @Composable
 private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
+    // Con foto de portada el velo blanco deja el fondo claro; sin ella manda el color del comercio,
+    // que puede ser oscuro (Negro) y entonces la tarjeta va con tinta blanca.
+    val darkTile = card.coverUrl == null && card.tile.isDarkSurface()
+    val ink = if (darkTile) Color.White else VuInk
+    val ink2 = if (darkTile) Color.White.copy(alpha = 0.85f) else VuInk2
+    val ink3 = if (darkTile) Color.White.copy(alpha = 0.7f) else VuInk3
     Box(
         Modifier
             .fillMaxWidth()
@@ -161,12 +168,8 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
     ) {
         // Fondo o color, nunca los dos: si el comercio subió una foto de fondo manda la foto
         // (atenuada con un velo blanco para que el texto e iconos oscuros sigan legibles); si no,
-        // manda el color que eligió, degradado hacia el blanco de la tarjeta.
-        Box(
-            Modifier.matchParentSize().background(
-                Brush.linearGradient(listOf(card.tile, VuCard)),
-            ),
-        )
+        // manda el color que eligió, plano.
+        Box(Modifier.matchParentSize().background(card.tile))
         if (card.coverUrl != null) {
             AsyncImage(
                 model = card.coverUrl,
@@ -196,25 +199,25 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
                     // que el símbolo no se pierda sobre su propio color (igual que en la vista
                     // previa del comercio).
                     shape = RoundedCornerShape(14.dp),
-                    background = VuCard,
+                    background = if (darkTile) Color.White.copy(alpha = 0.14f) else VuCard,
                 )
                 Column(Modifier.weight(1f)) {
-                    Text(card.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp, color = VuInk)
-                    Text(card.category, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = VuInk2)
+                    Text(card.name, fontSize = 17.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.2).sp, color = ink)
+                    Text(card.category, fontSize = 13.5.sp, fontWeight = FontWeight.Medium, color = ink2)
                 }
                 if (card.ready) {
                     Text(
                         "Lista ✦",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = VuAccentDeep,
+                        color = if (darkTile) Color.White else VuAccentDeep,
                         modifier = Modifier
                             .clip(RoundedCornerShape(999.dp))
-                            .background(VuAccentSoft)
+                            .background(if (darkTile) VuAccent else VuAccentSoft)
                             .padding(horizontal = 10.dp, vertical = 6.dp),
                     )
                 } else {
-                    Icon(VuelvoIcons.Chevron, null, Modifier.size(18.dp), tint = VuInk3)
+                    Icon(VuelvoIcons.Chevron, null, Modifier.size(18.dp), tint = ink3)
                 }
             }
 
@@ -227,8 +230,8 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Row {
-                    Text("${card.stamps}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VuInk)
-                    Text("/${card.max}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = VuInk3)
+                    Text("${card.stamps}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = ink)
+                    Text("/${card.max}", fontSize = 13.sp, fontWeight = FontWeight.Bold, color = ink3)
                 }
                 Text(
                     // The comercio does not configure a reward yet, so we stay generic instead of
@@ -237,7 +240,7 @@ private fun CardRow(card: StampCard, onOpen: (StampCard) -> Unit) {
                     else "A $left ${if (left > 1) "sellos" else "sello"} de tu recompensa",
                     fontSize = 13.sp,
                     fontWeight = FontWeight.Medium,
-                    color = VuInk2,
+                    color = ink2,
                 )
             }
         }
