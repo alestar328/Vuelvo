@@ -30,6 +30,9 @@ data class StampCard(
      * didn't set one. */
     val logoRef: String? = null,
     val coverRef: String? = null,
+    /** Datos de contacto del comercio, mostrados en la cabecera del detalle; null si no los dio. */
+    val address: String? = null,
+    val phone: String? = null,
 ) {
     val ready: Boolean get() = stamps >= max
     val logoUrl: String? get() = logoRef?.let(VuelvoStorage::downloadUrl)

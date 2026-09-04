@@ -107,6 +107,8 @@ class VuelvoRepository @Inject constructor(
                 coverRef = payload.coverRef ?: existing.coverRef,
                 tileHex = payload.tileHex ?: existing.tileHex,
                 inkHex = payload.inkHex ?: existing.inkHex,
+                address = payload.address ?: existing.address,
+                phone = payload.phone ?: existing.phone,
             ) ?: newCard(payload, uuid = uuid, businessCode = code)
             return StampOutcome.Applied(addStamp(card))
         }
@@ -123,6 +125,8 @@ class VuelvoRepository @Inject constructor(
                 coverRef = payload.coverRef ?: existing.coverRef,
                 tileHex = payload.tileHex ?: existing.tileHex,
                 inkHex = payload.inkHex ?: existing.inkHex,
+                address = payload.address ?: existing.address,
+                phone = payload.phone ?: existing.phone,
             ) ?: newCard(payload, uuid = uuid, businessCode = null)
             return StampOutcome.Applied(addStamp(card))
         }
@@ -137,6 +141,8 @@ class VuelvoRepository @Inject constructor(
             coverRef = payload.coverRef ?: existing.coverRef,
             tileHex = payload.tileHex ?: existing.tileHex,
             inkHex = payload.inkHex ?: existing.inkHex,
+            address = payload.address ?: existing.address,
+            phone = payload.phone ?: existing.phone,
         ) ?: newCard(payload, uuid = null, businessCode = null)
         return StampOutcome.Applied(addStamp(card))
     }
@@ -158,6 +164,8 @@ class VuelvoRepository @Inject constructor(
         businessCode = businessCode,
         logoRef = payload.logoRef,
         coverRef = payload.coverRef,
+        address = payload.address,
+        phone = payload.phone,
     )
 
     /** Increments a card; on reaching [StampCardEntity.maxStamps] mints a reward and resets. */

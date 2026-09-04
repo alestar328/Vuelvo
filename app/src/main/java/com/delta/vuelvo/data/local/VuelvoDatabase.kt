@@ -14,7 +14,7 @@ import com.delta.vuelvo.data.local.entity.VuelvoRewardEntity
  */
 @Database(
     entities = [StampCardEntity::class, VuelvoRewardEntity::class],
-    version = 5,
+    version = 6,
     exportSchema = true,
 )
 abstract class VuelvoDatabase : RoomDatabase() {

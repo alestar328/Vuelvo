@@ -30,6 +30,10 @@ data class StampCardEntity(
      * null for cards created before this existed or whose tag didn't set one. */
     val logoRef: String? = null,
     val coverRef: String? = null,
+    /** Dirección y teléfono del comercio, leídos del tag (`addr=`/`tel=`); null si no los escribió
+     * o la tarjeta se creó antes de que el deeplink los llevara. */
+    val address: String? = null,
+    val phone: String? = null,
 ) {
     val isReady: Boolean get() = stamps >= maxStamps
     val remaining: Int get() = maxStamps - stamps

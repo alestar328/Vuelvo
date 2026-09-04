@@ -37,6 +37,8 @@ fun StampCardEntity.toUi(): StampCard = StampCard(
     reward = reward,
     logoRef = logoRef,
     coverRef = coverRef,
+    address = address,
+    phone = phone,
 )
 
 fun StampCard.toEntity(): StampCardEntity = StampCardEntity(
@@ -51,6 +53,8 @@ fun StampCard.toEntity(): StampCardEntity = StampCardEntity(
     reward = reward,
     logoRef = logoRef,
     coverRef = coverRef,
+    address = address,
+    phone = phone,
 )
 
 // --- Reward ----------------------------------------------------------------

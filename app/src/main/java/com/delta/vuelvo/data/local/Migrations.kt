@@ -41,10 +41,20 @@ internal val MIGRATION_4_5 = object : Migration(4, 5) {
     }
 }
 
+internal val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        // StampCardEntity.address / phone — datos de contacto del comercio que ahora viajan en el tag
+        // y se muestran en la cabecera del detalle de la tarjeta.
+        db.execSQL("ALTER TABLE `stamp_cards` ADD COLUMN `address` TEXT")
+        db.execSQL("ALTER TABLE `stamp_cards` ADD COLUMN `phone` TEXT")
+    }
+}
+
 /** Todas las migraciones conocidas, en orden. Añade la nueva aquí al subir `version`. */
 internal val VUELVO_MIGRATIONS = arrayOf(
     MIGRATION_1_2,
     MIGRATION_2_3,
     MIGRATION_3_4,
     MIGRATION_4_5,
+    MIGRATION_5_6,
 )

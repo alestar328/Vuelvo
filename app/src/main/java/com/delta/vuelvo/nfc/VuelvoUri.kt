@@ -2,7 +2,7 @@ package com.delta.vuelvo.nfc
 
 import android.net.Uri
 
-/** Parsed payload of a `vuelvo://stamp?code=…&id=…&name=…&cat=…&color=…&tile=…&ink=…&max=…&reward=…&logo=…&cover=…` URI. */
+/** Parsed payload of a `vuelvo://stamp?code=…&id=…&name=…&cat=…&color=…&tile=…&ink=…&max=…&reward=…&addr=…&tel=…&logo=…&cover=…` URI. */
 data class StampPayload(
     val id: String,
     val name: String,
@@ -26,6 +26,10 @@ data class StampPayload(
      * card without shipping the palette table. Null on tags written before these existed. */
     val tileHex: String? = null,
     val inkHex: String? = null,
+    /** Datos de contacto del comercio (`addr=` / `tel=`), mostrados en la cabecera del detalle de la
+     * tarjeta. Null cuando el comercio no los rellenó o el tag es anterior a que existieran. */
+    val address: String? = null,
+    val phone: String? = null,
 )
 
 /**
@@ -56,10 +60,13 @@ object VuelvoUri {
         val colorId = uri.getQueryParameter("color")?.takeIf { it.isNotBlank() }
         val tileHex = uri.getQueryParameter("tile")?.takeIf { it.isNotBlank() }
         val inkHex = uri.getQueryParameter("ink")?.takeIf { it.isNotBlank() }
+        val address = uri.getQueryParameter("addr")?.trim()?.takeIf { it.isNotBlank() }
+        val phone = uri.getQueryParameter("tel")?.trim()?.takeIf { it.isNotBlank() }
         return StampPayload(
             id = id, name = name, max = max, reward = reward, category = category,
             uuid = uuid, code = code, logoRef = logoRef, coverRef = coverRef,
             colorId = colorId, tileHex = tileHex, inkHex = inkHex,
+            address = address, phone = phone,
         )
     }
 }

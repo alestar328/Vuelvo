@@ -131,6 +131,17 @@ object VuelvoIcons {
             "M10 11v6M14 11v6",
         )
     }
+    val MapPin by lazy {
+        mixedIcon(
+            listOf("M12 21c4.2-4.4 6.3-7.7 6.3-10.4a6.3 6.3 0 1 0-12.6 0C5.7 13.3 7.8 16.6 12 21Z"),
+            listOf(circle(12.0, 10.3, 2.2)),
+        )
+    }
+    val Phone by lazy {
+        strokeIcon(
+            "M7.4 3.6h2.2l1.4 3.6-1.9 1.4a12.4 12.4 0 0 0 6.3 6.3l1.4-1.9 3.6 1.4v2.2a2.3 2.3 0 0 1-2.5 2.3A16.7 16.7 0 0 1 5.1 6.1a2.3 2.3 0 0 1 2.3-2.5Z",
+        )
+    }
     val Check by lazy { strokeIcon("M4.5 12.5 9.5 17.5 19.5 6.5") }
     val Close by lazy { strokeIcon("M6 6l12 12M18 6L6 18") }
     val Chevron by lazy { strokeIcon("M9 5l7 7-7 7") }
